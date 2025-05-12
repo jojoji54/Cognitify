@@ -10,6 +10,42 @@ Cognitify es una aplicación móvil diseñada para ayudar en la detección tempr
 * Configuración personalizada según edad y nivel educativo.
 * Feedback inmediato tras cada prueba.
 
+## Estructura del proyecto
+
+lib/
+├── main.dart                 # Punto de entrada de la app
+├── app.dart                  # Configuración global y temas
+├── models/                   # Modelos de datos
+│   └── test_result.dart      # Resultados de tests
+│   └── user_profile.dart     # Perfil del usuario
+├── providers/                # Lógica de estado y manejo de datos
+│   └── user_provider.dart    # Perfil del usuario
+│   └── results_provider.dart # Resultados de tests
+├── screens/                  # Pantallas principales
+│   ├── home_screen.dart      # Pantalla de inicio
+│   ├── test_selection_screen.dart  # Selección de pruebas
+│   ├── test_execution/
+│   │   ├── memory_test_screen.dart # Test de memoria visual
+│   │   └── attention_test_screen.dart # Test de atención selectiva
+│   ├── results_screen.dart   # Pantalla de resultados
+│   └── settings_screen.dart  # Pantalla de configuración
+├── widgets/                  # Componentes reutilizables
+│   ├── test_card.dart        # Tarjetas para seleccionar tests
+│   └── result_chart.dart     # Gráficas de resultados
+├── services/                 # Servicios para lógica de negocio
+│   ├── storage_service.dart  # Manejo de Hive y persistencia
+│   └── stats_service.dart    # Análisis y cálculos estadísticos
+├── utils/                    # Utilidades y constantes
+│   └── test_constants.dart   # Constantes de pruebas
+├── data/                     # Datos de configuración y textos
+│   └── locales/              # Archivos de localización
+│       └── en.arb            # Traducciones en inglés
+│       └── es.arb            # Traducciones en español
+└── assets/                   # Recursos estáticos
+    ├── images/              # Imágenes para tests y fondo
+    └── sounds/              # Efectos de sonido
+
+
 ## 🧠 Pruebas Incluidas
 
 1. **Memoria Visual** - Prueba de retención de imágenes en pares.
