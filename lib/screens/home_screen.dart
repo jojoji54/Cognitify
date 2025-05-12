@@ -6,6 +6,28 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: NeumorphicAppBar(
+        title: const Text(
+          "Cognitify",
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          NeumorphicButton(
+            onPressed: () {},
+            style: const NeumorphicStyle(
+              shape: NeumorphicShape.flat,
+              boxShape: NeumorphicBoxShape.circle(),
+              depth: 4,
+            ),
+            child: const Icon(Icons.settings, size: 24),
+          ),
+        ],
+      ),
       backgroundColor: NeumorphicTheme.baseColor(context),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -13,23 +35,14 @@ class HomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Align(
-              alignment: Alignment.topCenter,
-              child: Text(
-                "Cognitify",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 40),
+          
             NeumorphicButton(
               onPressed: () {},
               style: NeumorphicStyle(
                 shape: NeumorphicShape.flat,
-                boxShape:
-                    NeumorphicBoxShape.roundRect(BorderRadius.circular(8)),
+                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(8)),
               ),
-              child:  Padding(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Text(
                   "Comenzar Pruebas Cognitivas",
@@ -46,10 +59,9 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {},
               style: NeumorphicStyle(
                 shape: NeumorphicShape.flat,
-                boxShape:
-                    NeumorphicBoxShape.roundRect(BorderRadius.circular(8)),
+                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(8)),
               ),
-              child:  Padding(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Text(
                   "Ver Resultados",
@@ -66,8 +78,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {},
               style: NeumorphicStyle(
                 shape: NeumorphicShape.flat,
-                boxShape:
-                    NeumorphicBoxShape.roundRect(BorderRadius.circular(8)),
+                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(8)),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
