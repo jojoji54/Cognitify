@@ -1,4 +1,4 @@
-package com.example.cognitify
+package com.mrrubik.cognitify
 
 import io.flutter.embedding.android.FlutterActivity
 
