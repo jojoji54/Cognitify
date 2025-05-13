@@ -1,4 +1,6 @@
+import 'package:cognitify/screens/test_selection_screen.dart';
 import 'package:dashed_circular_progress_bar/dashed_circular_progress_bar.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:lottie/lottie.dart';
 
@@ -76,73 +78,82 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 80),
                 Row(
-              children: [
-                Expanded(
-                  child: NeumorphicButton(
-                    onPressed: () {},
-                    style: NeumorphicStyle(
-                      shape: NeumorphicShape.flat,
-                      boxShape: NeumorphicBoxShape.roundRect(
-                          BorderRadius.circular(8)),
-                      depth: 6,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Row(
+                  children: [
+                    Expanded(
+                      child: NeumorphicButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const TestSelectionScreen()),
+                          );
+                        },
+                        style: NeumorphicStyle(
+                          shape: NeumorphicShape.flat,
+                          boxShape: NeumorphicBoxShape.roundRect(
+                              BorderRadius.circular(8)),
+                          depth: 6,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(Icons.play_circle_fill,
-                                  size: 30,
-                                  color: Color.fromARGB(255, 80, 39, 176)),
-                              SizedBox(width: 10),
-                              Text(
-                                "Resultados",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 47, 47, 47),
-                                ),
+                              const Row(
+                                children: [
+                                  Icon(Icons.play_circle_fill,
+                                      size: 30,
+                                      color: Color.fromARGB(255, 80, 39, 176)),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "Pruebas",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color.fromARGB(255, 47, 47, 47),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: 50,
-                            width: 50,
-                            child: DashedCircularProgressBar.aspectRatio(
-                              aspectRatio: 0.5, // width ÷ height
-                              valueNotifier: _valueNotifier0,
-                              progress: 30,
-                              maxProgress: 100,
-                              corners: StrokeCap.butt,
-                              foregroundColor: Color.fromARGB(255, 80, 39, 176),
-                              backgroundColor:
-                                  const Color.fromARGB(255, 194, 190, 190),
-                              foregroundStrokeWidth: 5,
-                              backgroundStrokeWidth: 5,
-                              animation: true,
-                              child: Center(
-                                child: ValueListenableBuilder(
-                                  valueListenable: _valueNotifier0,
-                                  builder: (_, double value, __) => Text(
-                                    '${value.toInt()}%',
-                                    style: const TextStyle(
-                                        color: Colors.black,
-                                        fontWeight: FontWeight.w300,
-                                        fontSize: 10),
+                              SizedBox(
+                                height: 50,
+                                width: 50,
+                                child: DashedCircularProgressBar.aspectRatio(
+                                  aspectRatio: 0.5, // width ÷ height
+                                  valueNotifier: _valueNotifier0,
+                                  progress: 30,
+                                  maxProgress: 100,
+                                  corners: StrokeCap.butt,
+                                  foregroundColor:
+                                      Color.fromARGB(255, 80, 39, 176),
+                                  backgroundColor:
+                                      const Color.fromARGB(255, 194, 190, 190),
+                                  foregroundStrokeWidth: 5,
+                                  backgroundStrokeWidth: 5,
+                                  animation: true,
+                                  child: Center(
+                                    child: ValueListenableBuilder(
+                                      valueListenable: _valueNotifier0,
+                                      builder: (_, double value, __) => Text(
+                                        '${value.toInt()}%',
+                                        style: const TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w300,
+                                            fontSize: 10),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          )
-                        ],
+                              )
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
               ],
             ),
             const SizedBox(height: 20),
