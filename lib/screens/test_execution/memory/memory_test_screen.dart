@@ -29,26 +29,26 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
     sequence = List.generate(sequenceLength, (_) => random.nextInt(10));
   }
 
- void startTest() {
-  setState(() {
-    testStarted = true;
-    showInfo = false;
-    currentStep = 0;
-    userInput = "";
-    showInput = false;
-    generateSequence();
+  void startTest() {
+    setState(() {
+      testStarted = true;
+      showInfo = false;
+      currentStep = 0;
+      userInput = "";
+      showInput = false;
+      generateSequence();
 
-    // Tiempo dinámico basado en la dificultad
-    int displayTime = (15 - sequenceLength) * 200; // Ajusta este valor si es muy rápido
+      // Tiempo dinámico basado en la dificultad
+      int displayTime =
+          (15 - sequenceLength) * 200; // Ajusta este valor si es muy rápido
 
-    Future.delayed(Duration(milliseconds: displayTime), () {
-      setState(() {
-        showInput = true;
+      Future.delayed(Duration(milliseconds: displayTime), () {
+        setState(() {
+          showInput = true;
+        });
       });
     });
-  });
-}
-
+  }
 
   void checkAnswer() {
     if (userInput == sequence.join("")) {
@@ -196,7 +196,7 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
                       sequence.join(" "),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontSize: 28,
+                        fontSize: 40,
                         fontWeight: FontWeight.bold,
                         color: Color.fromARGB(255, 80, 39, 176),
                       ),
@@ -211,44 +211,106 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
                       color: NeumorphicTheme.baseColor(context),
                     ),
                     padding: const EdgeInsets.all(20),
-                    child: TextField(
-                      onChanged: (value) {
-                        setState(() {
-                          userInput = value;
-                        });
-                      },
-                      decoration: const InputDecoration(
-                        hintText: "Ingresa la secuencia...",
-                        border: InputBorder.none,
-                      ),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 47, 47, 47),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  NeumorphicButton(
-                    onPressed: checkAnswer,
-                    style: NeumorphicStyle(
-                      shape: NeumorphicShape.flat,
-                      boxShape: NeumorphicBoxShape.roundRect(
-                          BorderRadius.circular(16)),
-                      depth: 6,
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Text(
-                        "Verificar",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 47, 47, 47),
+                    child: Column(
+                      children: [
+                        Text(
+                          userInput.isEmpty
+                              ? "Selecciona la secuencia..."
+                              : userInput,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 47, 47, 47),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: List.generate(10, (number) {
+                            return NeumorphicButton(
+                              onPressed: () {
+                                if (userInput.length < sequence.length) {
+                                  setState(() {
+                                    userInput += number.toString();
+                                  });
+                                }
+                              },
+                              style: NeumorphicStyle(
+                                depth: 6,
+                                boxShape: NeumorphicBoxShape.circle(),
+                                color: NeumorphicTheme.baseColor(context),
+                              ),
+                              padding: const EdgeInsets.all(20),
+                              child: Text(
+                                number.toString(),
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color.fromARGB(255, 80, 39, 176),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: NeumorphicButton(
+                                onPressed: () {
+                                  setState(() {
+                                    userInput = "";
+                                  });
+                                },
+                                style: NeumorphicStyle(
+                                  shape: NeumorphicShape.flat,
+                                  boxShape: NeumorphicBoxShape.roundRect(
+                                      BorderRadius.circular(16)),
+                                  depth: 6,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 15, horizontal: 20),
+                                child: const Text(
+                                  "Borrar",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color.fromARGB(255, 47, 47, 47),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: NeumorphicButton(
+                                onPressed: () {
+                                  checkAnswer();
+                                },
+                                style: NeumorphicStyle(
+                                  shape: NeumorphicShape.flat,
+                                  boxShape: NeumorphicBoxShape.roundRect(
+                                      BorderRadius.circular(16)),
+                                  depth: 6,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 15, horizontal: 20),
+                                child: const Text(
+                                  "Verificar",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color.fromARGB(255, 47, 47, 47),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ],
