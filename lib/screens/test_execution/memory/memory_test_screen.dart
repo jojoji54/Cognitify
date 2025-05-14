@@ -2,6 +2,8 @@ import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter_animator/flutter_animator.dart';
 import 'dart:math';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class SequenceOfNumbers extends StatefulWidget {
   const SequenceOfNumbers({Key? key}) : super(key: key);
 
@@ -21,12 +23,25 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
   @override
   void initState() {
     super.initState();
+    loadDifficulty();
     generateSequence();
   }
 
   void generateSequence() {
     final random = Random();
     sequence = List.generate(sequenceLength, (_) => random.nextInt(10));
+  }
+
+   Future<void> saveDifficulty(int length) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('sequenceLength', length);
+  }
+
+  Future<void> loadDifficulty() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      sequenceLength = prefs.getInt('sequenceLength') ?? 5;
+    });
   }
 
   void startTest() {
@@ -160,6 +175,7 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
                           onChanged: (value) {
                             setState(() {
                               sequenceLength = value.toInt();
+                              saveDifficulty(sequenceLength);
                               generateSequence();
                             });
                           },

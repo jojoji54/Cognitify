@@ -45,6 +45,7 @@ dependencies:
   font_awesome_flutter: ^10.8.0
   dashed_circular_progress_bar: ^0.0.6
   flutter_animator: ^3.2.2
+  shared_preferences: ^2.1.1
 
 
 dev_dependencies:
