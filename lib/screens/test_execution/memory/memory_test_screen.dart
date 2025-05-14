@@ -29,23 +29,26 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
     sequence = List.generate(sequenceLength, (_) => random.nextInt(10));
   }
 
-  void startTest() {
-    setState(() {
-      testStarted = true;
-      showInfo = false;
-      currentStep = 0;
-      userInput = "";
-      showInput = false;
-      generateSequence();
+ void startTest() {
+  setState(() {
+    testStarted = true;
+    showInfo = false;
+    currentStep = 0;
+    userInput = "";
+    showInput = false;
+    generateSequence();
 
-      // Muestra la secuencia temporalmente antes de ocultarla
-      Future.delayed(const Duration(seconds: 3), () {
-        setState(() {
-          showInput = true;
-        });
+    // Tiempo dinámico basado en la dificultad
+    int displayTime = (15 - sequenceLength) * 200; // Ajusta este valor si es muy rápido
+
+    Future.delayed(Duration(milliseconds: displayTime), () {
+      setState(() {
+        showInput = true;
       });
     });
-  }
+  });
+}
+
 
   void checkAnswer() {
     if (userInput == sequence.join("")) {
