@@ -1,5 +1,7 @@
+import 'package:cognitify/screens/dataset_selection_screen.dart';
 import 'package:cognitify/screens/test_execution/memory/memory_test_screen.dart';
 import 'package:cognitify/screens/test_execution/memory/memory_test_type_selection.dart';
+import 'package:cognitify/services/preferences_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animator/flutter_animator.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
@@ -113,15 +115,27 @@ class _TestSelectionScreenState extends State<TestSelectionScreen> {
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: NeumorphicButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     HapticFeedback.lightImpact();
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
+                                    final hasDataset = await PreferencesService
+                                        .isDatasetSelected(selectedTest!);
+                                    if (hasDataset) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
                                           builder: (context) => indexs == 0
                                               ? const MemoryTestTypeSelection()
-                                              : const MemoryTestTypeSelection()),
-                                    );
+                                              : const MemoryTestTypeSelection(),
+                                        ),
+                                      );
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                DatasetSelectionScreen()),
+                                      );
+                                    }
                                   },
                                   style: NeumorphicStyle(
                                     shape: NeumorphicShape.flat,
