@@ -22,13 +22,16 @@ class DatasetInfoAdapter extends TypeAdapter<DatasetInfo> {
       type: fields[2] as String,
       dateAdded: fields[3] as DateTime,
       lastUpdated: fields[4] as DateTime?,
+      jsonData: (fields[5] as List?)
+          ?.map((dynamic e) => (e as Map).cast<String, dynamic>())
+          ?.toList(),
     );
   }
 
   @override
   void write(BinaryWriter writer, DatasetInfo obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
@@ -38,7 +41,9 @@ class DatasetInfoAdapter extends TypeAdapter<DatasetInfo> {
       ..writeByte(3)
       ..write(obj.dateAdded)
       ..writeByte(4)
-      ..write(obj.lastUpdated);
+      ..write(obj.lastUpdated)
+      ..writeByte(5)
+      ..write(obj.jsonData);
   }
 
   @override

@@ -18,7 +18,10 @@ class DatasetInfo extends HiveObject {
   DateTime dateAdded;
 
   @HiveField(4)
-  DateTime? lastUpdated; // Nueva propiedad para la fecha de actualización
+  DateTime? lastUpdated;
+
+  @HiveField(5)
+  List<Map<String, dynamic>>? jsonData; // Aquí se guarda el CSV convertido a JSON
 
   DatasetInfo({
     required this.name,
@@ -26,5 +29,6 @@ class DatasetInfo extends HiveObject {
     required this.type,
     required this.dateAdded,
     this.lastUpdated,
+    this.jsonData,
   });
 }
