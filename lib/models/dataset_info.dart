@@ -1,3 +1,4 @@
+// lib/models/dataset_info.dart
 import 'package:hive/hive.dart';
 
 part 'dataset_info.g.dart';
@@ -11,15 +12,19 @@ class DatasetInfo extends HiveObject {
   String url;
 
   @HiveField(2)
-  String type; // Memoria, Atención, Razonamiento, etc.
+  String type;
 
   @HiveField(3)
   DateTime dateAdded;
+
+  @HiveField(4)
+  DateTime? lastUpdated; // Nueva propiedad para la fecha de actualización
 
   DatasetInfo({
     required this.name,
     required this.url,
     required this.type,
     required this.dateAdded,
+    this.lastUpdated,
   });
 }

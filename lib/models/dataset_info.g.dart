@@ -21,13 +21,14 @@ class DatasetInfoAdapter extends TypeAdapter<DatasetInfo> {
       url: fields[1] as String,
       type: fields[2] as String,
       dateAdded: fields[3] as DateTime,
+      lastUpdated: fields[4] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, DatasetInfo obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
@@ -35,7 +36,9 @@ class DatasetInfoAdapter extends TypeAdapter<DatasetInfo> {
       ..writeByte(2)
       ..write(obj.type)
       ..writeByte(3)
-      ..write(obj.dateAdded);
+      ..write(obj.dateAdded)
+      ..writeByte(4)
+      ..write(obj.lastUpdated);
   }
 
   @override

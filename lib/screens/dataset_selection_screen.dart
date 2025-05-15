@@ -25,10 +25,22 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
   }
 
   Future<void> downloadDataset(DatasetInfo dataset) async {
-    // Aquí pondremos la lógica para descargar el dataset
+    // Simula una descarga y marca el dataset como seleccionado
+    final newDataset = DatasetInfo(
+      name: dataset.name,
+      url: dataset.url,
+      type: dataset.type,
+      dateAdded: dataset.dateAdded,
+      lastUpdated: dataset.lastUpdated,
+    );
+
+    datasetBox.add(newDataset);
     await PreferencesService.setDatasetSelected(dataset.type, true);
-    datasetBox.add(dataset);
     setState(() {});
+  }
+
+  String formatDate(DateTime date) {
+    return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
   }
 
   @override
@@ -52,65 +64,86 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
       backgroundColor: NeumorphicTheme.baseColor(context),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: availableDatasets.map((dataset) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: NeumorphicButton(
-                onPressed: () => downloadDataset(dataset),
-                style: NeumorphicStyle(
-                  shape: NeumorphicShape.flat,
-                  boxShape:
-                      NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
-                  depth: 6,
+        child: SingleChildScrollView(
+          child: Column(
+            children: availableDatasets.map((dataset) {
+              final existingDataset = datasetBox.values.firstWhere(
+                (d) => d.name == dataset.name,
+                orElse: () => DatasetInfo(
+                  name: dataset.name,
+                  url: dataset.url,
+                  type: dataset.type,
+                  dateAdded: dataset.dateAdded,
+                  lastUpdated: dataset.lastUpdated,
                 ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.download_rounded,
-                            size: 30,
-                            color: Color.fromARGB(255, 80, 39, 176),
-                          ),
-                          const SizedBox(width: 15),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                dataset.name,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 47, 47, 47),
+              );
+          
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: NeumorphicButton(
+                  onPressed: () => downloadDataset(dataset),
+                  style: NeumorphicStyle(
+                    shape: NeumorphicShape.flat,
+                    boxShape:
+                        NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+                    depth: 6,
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.download_rounded,
+                              size: 30,
+                              color: Color.fromARGB(255, 80, 39, 176),
+                            ),
+                            const SizedBox(width: 15),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  dataset.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color.fromARGB(255, 47, 47, 47),
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                "Tipo: ${dataset.type}",
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color.fromARGB(255, 80, 80, 80),
+                                Text(
+                                  "Tipo: ${dataset.type}",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color.fromARGB(255, 80, 80, 80),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 20,
-                        color: Color.fromARGB(255, 150, 150, 150),
-                      ),
-                    ],
+                                if (existingDataset.lastUpdated != null)
+                                  Text(
+                                    "Actualizado: ${formatDate(existingDataset.lastUpdated!)}",
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color.fromARGB(255, 120, 120, 120),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 20,
+                          color: Color.fromARGB(255, 150, 150, 150),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
