@@ -19,9 +19,11 @@ class TestResultAdapter extends TypeAdapter<TestResult> {
     return TestResult(
       testName: fields[0] as String,
       date: fields[1] as DateTime,
-      score: fields[2] as double,
-      duration: fields[3] as Duration,
-      rawData: (fields[4] as Map).cast<String, dynamic>(),
+      scores: (fields[2] as List).cast<double>(),
+      durations: (fields[3] as List).cast<Duration>(),
+      rawData: (fields[4] as List)
+          .map((dynamic e) => (e as Map).cast<String, dynamic>())
+          .toList(),
     );
   }
 
@@ -34,9 +36,9 @@ class TestResultAdapter extends TypeAdapter<TestResult> {
       ..writeByte(1)
       ..write(obj.date)
       ..writeByte(2)
-      ..write(obj.score)
+      ..write(obj.scores)
       ..writeByte(3)
-      ..write(obj.duration)
+      ..write(obj.durations)
       ..writeByte(4)
       ..write(obj.rawData);
   }

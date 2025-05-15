@@ -1,5 +1,6 @@
 import 'package:cognitify/app.dart';
 import 'package:cognitify/models/dataset_info.dart';
+import 'package:cognitify/models/duration_adapter.dart';
 import 'package:cognitify/models/test_result.dart';
 import 'package:cognitify/models/user_profile.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ void main() async {
   Hive.registerAdapter(DatasetInfoAdapter());
   Hive.registerAdapter(UserProfileAdapter());
   Hive.registerAdapter(TestResultAdapter());
+  Hive.registerAdapter(DurationAdapter());
 
   // Abre las cajas necesarias con tipos específicos
   await Hive.openBox<UserProfile>('userBox');
@@ -23,4 +25,3 @@ void main() async {
 
   runApp(CognitifyApp());
 }
-

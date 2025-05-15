@@ -1,3 +1,4 @@
+import 'package:cognitify/utils/test_constants.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter_animator/flutter_animator.dart';
 import 'dart:math';
@@ -12,6 +13,7 @@ class SequenceOfNumbers extends StatefulWidget {
 }
 
 class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
+  DateTime? startTime;
   List<int> sequence = [];
   int currentStep = 0;
   bool testStarted = false;
@@ -32,7 +34,7 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
     sequence = List.generate(sequenceLength, (_) => random.nextInt(10));
   }
 
-   Future<void> saveDifficulty(int length) async {
+  Future<void> saveDifficulty(int length) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('sequenceLength', length);
   }
@@ -52,6 +54,7 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
       userInput = "";
       showInput = false;
       generateSequence();
+      startTime = DateTime.now();
 
       // Tiempo dinámico basado en la dificultad
       int displayTime =
@@ -66,21 +69,44 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
   }
 
   void checkAnswer() {
-    if (userInput == sequence.join("")) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Correcto!")),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("❌ Incorrecto. Era: ${sequence.join("")}"),
-        ),
-      );
-    }
+
+    // Calcula si la secuencia es correcta
+    bool isCorrect = userInput == sequence.join("");
+    final duration = DateTime.now().difference(startTime!);
+    int errors = isCorrect ? 0 : sequence.length - userInput.length;
+    double score =
+        isCorrect ? 100.0 : (userInput.length / sequence.length) * 100.0;
+
+    // Datos sin procesar para guardar en Hive
+    final rawData = {
+      "sequenceLength": sequenceLength,
+      "userInput": userInput,
+      "expected": sequence.join(""),
+      "errors": errors,
+      "responseTime": duration.inMilliseconds,
+      "difficulty": sequenceLength,
+      "correct": isCorrect,
+    };
+
+    // Guarda el resultado
+    Constant.saveTestResult(
+        "Secuencia de Números", score, duration, rawData, sequenceLength);
+
+    // Muestra el resultado al usuario
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isCorrect
+            ? "✅ Correcto! Puntuación: $score"
+            : "❌ Incorrecto. Era: ${sequence.join("")}"),
+      ),
+    );
+
+    // Reinicia el estado del juego
     setState(() {
       testStarted = false;
       showInput = false;
       userInput = "";
+      startTime = null; // Reinicia el temporizador
     });
   }
 
