@@ -59,6 +59,8 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
       userInput = "";
       showInput = false;
       generateSequence();
+
+      // ✅ Registra el tiempo de inicio aquí, no en checkAnswer
       startTime = DateTime.now();
 
       int displayTime = (15 - sequenceLength) * 200;
@@ -70,56 +72,116 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
     });
   }
 
+  double calculateScore(String userInput, String expectedSequence,
+      Duration duration, int difficulty) {
+    int correctLength = 0;
+    int errors = 0;
+
+    print("🔍 Iniciando cálculo de puntuación...");
+    print("📝 Secuencia Esperada: $expectedSequence");
+    print("📝 Secuencia del Usuario: $userInput");
+    print("🕒 Duración: ${duration.inSeconds} segundos");
+    print("🧩 Dificultad: $difficulty");
+
+    // Calcula la precisión
+    for (int i = 0; i < userInput.length; i++) {
+      if (i < expectedSequence.length && userInput[i] == expectedSequence[i]) {
+        correctLength++;
+      } else {
+        errors++;
+      }
+    }
+
+    print("✅ Caracteres correctos: $correctLength");
+    print("❌ Errores: $errors");
+
+    // Penalización por errores
+    double accuracyScore = (correctLength / expectedSequence.length) * 100;
+    accuracyScore -= errors * 5;
+    print("🎯 Puntuación de Precisión: $accuracyScore");
+
+    // Penalización por tiempo (más balanceada)
+    int maxTime = difficulty * 2;
+    double timePenalty = (duration.inSeconds / maxTime) * 50.0;
+    timePenalty =
+        timePenalty.clamp(0, 50); // Limita la penalización máxima a 50 puntos
+    print("⏱️ Penalización por Tiempo: $timePenalty");
+
+    // Calcula la puntuación final sin escalar
+    double finalScore = accuracyScore - timePenalty;
+    print("📝 Puntuación sin escalar: $finalScore");
+
+    // Asegura que no sea negativo
+    finalScore = finalScore.clamp(0, 100);
+    print("🏁 Puntuación Final: $finalScore");
+
+    return finalScore;
+  }
+
   void checkAnswer() {
     try {
-      final startTime = DateTime.now();
+      if (startTime == null) {
+        print("❌ Error: El tiempo de inicio no está registrado.");
+        return;
+      }
 
-    // Calcula si la secuencia es correcta
-    bool isCorrect = userInput == sequence.join("");
-    final duration = DateTime.now().difference(startTime);
-    int errors = isCorrect ? 0 : sequence.length - userInput.length;
-    double score =
-        isCorrect ? 100.0 : (userInput.length / sequence.length) * 100.0;
+      // Calcula si la secuencia es correcta
+      final duration = DateTime.now().difference(startTime!);
+      final isCorrect = userInput == sequence.join("");
+      final score = calculateScore(
+          userInput, sequence.join(""), duration, sequenceLength);
 
-    // Datos sin procesar para guardar en Hive
-    final rawData = {
-      "sequenceLength": sequenceLength,
-      "userInput": userInput,
-      "expected": sequence.join(""),
-      "errors": errors,
-      "responseTime": duration.inMilliseconds,
-      "difficulty": sequenceLength,
-      "correct": isCorrect,
-    };
+      // Datos sin procesar para guardar en Hive
+      final rawData = {
+        "sequenceLength": sequenceLength,
+        "userInput": userInput,
+        "expected": sequence.join(""),
+        "errors": sequence.length - userInput.length,
+        "responseTime": duration.inMilliseconds,
+        "difficulty": sequenceLength,
+        "correct": isCorrect,
+      };
 
-    // Guarda el resultado
-    Constant.saveTestResult(
-        "Secuencia de Números", score, duration, rawData, sequenceLength);
+      // Logs detallados
+      print("🔍 Iniciando cálculo de puntuación...");
+      print("📝 Secuencia Esperada: ${sequence.join("")}");
+      print("📝 Secuencia del Usuario: $userInput");
+      print("🕒 Duración: ${duration.inMilliseconds} ms");
+      print("🧩 Dificultad: $sequenceLength");
+      print("✅ Secuencia Correcta: $isCorrect");
+      print("📊 Puntuación Calculada: ${score.toStringAsFixed(2)}");
+      print("📝 Datos sin procesar: $rawData");
 
-    // Muestra el resultado al usuario
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(isCorrect
-            ? "✅ Correcto! Puntuación: $score"
-            : "❌ Incorrecto. Era: ${sequence.join("")}"),
-      ),
-    );
+      // Guarda el resultado
+      Constant.saveTestResult(
+          "Secuencia de Números", score, duration, rawData, sequenceLength);
 
-    // Reinicia el estado del juego
-    setState(() {
-      testStarted = false;
-      showInput = false;
-      userInput = "";
-    });
-      
+      // Muestra el resultado al usuario
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isCorrect
+              ? "✅ Correcto! Puntuación: ${score.toStringAsFixed(2)}"
+              : "❌ Incorrecto. Era: ${sequence.join("")}"),
+        ),
+      );
+
+      // Reinicia el estado del juego
+      setState(() {
+        testStarted = false;
+        showInput = false;
+        userInput = "";
+        startTime = null; // Resetea el tiempo para el siguiente intento
+      });
+
+      print("✅ Resultado guardado correctamente.");
     } catch (e) {
-       ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Algo ha ido mal :("),
-      ),
-    );
-    } 
-    
+      print("❌ Error al guardar el resultado: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Algo ha ido mal :("),
+        ),
+      );
+    }
   }
 
   @override
