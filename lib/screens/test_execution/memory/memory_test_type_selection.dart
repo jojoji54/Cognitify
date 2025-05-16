@@ -1,5 +1,5 @@
 
-import 'package:cognitify/screens/test_execution/memory/memory_test_screen.dart';
+import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/secuence_of_numbers.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 
 class MemoryTestTypeSelection extends StatelessWidget {
