@@ -1,6 +1,6 @@
 // lib/widgets/category_buttons.dart
 import 'package:cognitify/models/user_profile.dart';
-import 'package:cognitify/screens/home/result/memory_results_screen.dart';
+import 'package:cognitify/screens/home/result/memory/memory_results_screen.dart';
 import 'package:cognitify/screens/profile/user_profile_screen.dart';
 import 'package:flutter_animator/flutter_animator.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
