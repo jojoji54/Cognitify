@@ -2,6 +2,7 @@
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter/material.dart';
 import 'package:page_view_dot_indicator/page_view_dot_indicator.dart';
+import 'games/memory_sequence_results.dart';
 
 class MemoryResultsScreen extends StatefulWidget {
   const MemoryResultsScreen({Key? key}) : super(key: key);
@@ -42,49 +43,18 @@ class _MemoryResultsScreenState extends State<MemoryResultsScreen> {
       body: Column(
         children: [
           Expanded(
-            child: PageView.builder(
+            child: PageView(
               controller: _pageController,
               onPageChanged: (index) {
                 setState(() {
                   _currentPage = index;
                 });
               },
-              itemCount: memoryGames.length,
-              itemBuilder: (context, index) {
-                final game = memoryGames[index];
-                return Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: 6,
-                      boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
-                      color: NeumorphicTheme.baseColor(context),
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          "Resultados de ${game['name']}",
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 47, 47, 47),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          "Aquí mostraremos las estadísticas y gráficos del juego.",
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color.fromARGB(255, 80, 80, 80),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+              children: const [
+                MemorySequenceResults(),
+                Center(child: Text("🃏 Resultados de Parejas de Cartas")),
+                Center(child: Text("🗺️ Resultados de Memoria Espacial")),
+              ],
             ),
           ),
           const SizedBox(height: 20),
