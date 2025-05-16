@@ -51,6 +51,10 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
           .toList();
     }
 
+    // Limitamos los datos para no sobrecargar el gráfico
+    results = results.take(50).toList();
+    datasetScores = datasetScores.take(50).toList();
+
     setState(() {
       isLoading = false;
     });
@@ -74,27 +78,13 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
       );
     }
 
-    // Calcula estadísticas
-    final averageScore =
-        results.expand((r) => r.scores).reduce((a, b) => a + b) /
-            results.expand((r) => r.scores).length;
-    final averageResponseTime = results
-            .expand((r) => r.durations)
-            .map((d) => d.inSeconds)
-            .reduce((a, b) => a + b) /
-        results.expand((r) => r.durations).length;
-    final accuracy =
-        (results.expand((r) => r.scores).where((s) => s == 100).length /
-                results.expand((r) => r.scores).length) *
-            100;
-
     return Padding(
       padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildSummaryCard(averageScore, averageResponseTime, accuracy),
+            _buildSummaryCard(),
             const SizedBox(height: 20),
             _buildLineChart(),
             const SizedBox(height: 20),
@@ -105,8 +95,9 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
     );
   }
 
-  Widget _buildSummaryCard(
-      double averageScore, double averageResponseTime, double accuracy) {
+  Widget _buildSummaryCard() {
+    final averageScore = results.expand((r) => r.scores).reduce((a, b) => a + b) /
+        results.expand((r) => r.scores).length;
     final datasetAverage = datasetScores.isNotEmpty
         ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
         : 0.0;
@@ -144,27 +135,6 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
               color: Color.fromARGB(255, 120, 120, 120),
             ),
           ),
-          Text(
-            "Tiempo de Respuesta Promedio: ${averageResponseTime.toStringAsFixed(2)} segundos",
-            style: const TextStyle(
-              fontSize: 18,
-              color: Color.fromARGB(255, 80, 80, 80),
-            ),
-          ),
-          Text(
-            "Precisión Total: ${accuracy.toStringAsFixed(2)}%",
-            style: const TextStyle(
-              fontSize: 18,
-              color: Color.fromARGB(255, 80, 80, 80),
-            ),
-          ),
-          Text(
-            "Total de Pruebas: ${results.length}",
-            style: const TextStyle(
-              fontSize: 18,
-              color: Color.fromARGB(255, 80, 80, 80),
-            ),
-          ),
         ],
       ),
     );
@@ -178,66 +148,40 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
         color: NeumorphicTheme.baseColor(context),
       ),
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            "📈 Evolución del Rendimiento",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 47, 47, 47),
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 300,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
+      child: SizedBox(
+        height: 300,
+        child: LineChart(
+          LineChartData(
+            gridData: FlGridData(show: true),
+            lineBarsData: [
+              // Datos del Usuario
+              LineChartBarData(
+                spots: results.asMap().entries.map((entry) => FlSpot(
+                      entry.key.toDouble(),
+                      entry.value.scores.last,
+                    )).toList(),
+                isCurved: true,
+                dotData: FlDotData(show: true),
+                belowBarData: BarAreaData(show: false),
+                color: const Color.fromARGB(255, 80, 39, 176),
+              ),
+              // Datos del Dataset
+              LineChartBarData(
+                spots: List.generate(
+                  datasetScores.length,
+                  (index) => FlSpot(
+                    index.toDouble(),
+                    datasetScores[index],
                   ),
                 ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: results
-                        .asMap()
-                        .entries
-                        .map((entry) => FlSpot(
-                              entry.key.toDouble(),
-                              entry.value.scores.last,
-                            ))
-                        .toList(),
-                    isCurved: true,
-                    dotData: FlDotData(show: false),
-                    belowBarData: BarAreaData(show: false),
-                    color: const Color.fromARGB(255, 80, 39, 176),
-                  ),
-                  if (datasetScores.isNotEmpty)
-                    LineChartBarData(
-                      spots: List.generate(
-                        datasetScores.length > 50 ? 50 : datasetScores.length,
-                        (index) => FlSpot(
-                          index.toDouble(),
-                          datasetScores[index],
-                        ),
-                      ),
-                      isCurved: true,
-                      dotData: FlDotData(show: false),
-                      belowBarData: BarAreaData(show: false),
-                      color: const Color.fromARGB(255, 120, 120, 120),
-                    ),
-                ],
+                isCurved: true,
+                dotData: FlDotData(show: false),
+                belowBarData: BarAreaData(show: false),
+                color: const Color.fromARGB(255, 120, 120, 120),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
