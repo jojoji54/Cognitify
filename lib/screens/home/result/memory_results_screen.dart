@@ -1,6 +1,7 @@
 // lib/screens/results/memory_results_screen.dart
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter/material.dart';
+import 'package:page_view_dot_indicator/page_view_dot_indicator.dart';
 
 class MemoryResultsScreen extends StatefulWidget {
   const MemoryResultsScreen({Key? key}) : super(key: key);
@@ -40,57 +41,6 @@ class _MemoryResultsScreenState extends State<MemoryResultsScreen> {
       backgroundColor: NeumorphicTheme.baseColor(context),
       body: Column(
         children: [
-          // Barra de navegación superior
-          SizedBox(
-            height: 80,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: memoryGames.length,
-              itemBuilder: (context, index) {
-                final game = memoryGames[index];
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _currentPage = index;
-                      _pageController.animateToPage(index,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut);
-                    });
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _currentPage == index
-                          ? const Color.fromARGB(255, 80, 39, 176)
-                          : NeumorphicTheme.baseColor(context),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: _currentPage == index
-                          ? [
-                              BoxShadow(
-                                color: const Color.fromARGB(255, 80, 39, 176).withOpacity(0.5),
-                                spreadRadius: 3,
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              )
-                            ]
-                          : [],
-                    ),
-                    child: Text(
-                      "${game['icon']} ${game['name']}",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _currentPage == index
-                            ? Colors.white
-                            : const Color.fromARGB(255, 47, 47, 47),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
           Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -137,6 +87,15 @@ class _MemoryResultsScreenState extends State<MemoryResultsScreen> {
               },
             ),
           ),
+          const SizedBox(height: 20),
+          PageViewDotIndicator(
+            currentItem: _currentPage,
+            count: memoryGames.length,
+            unselectedColor: const Color.fromARGB(255, 150, 150, 150),
+            selectedColor: const Color.fromARGB(255, 80, 39, 176),
+            duration: const Duration(milliseconds: 300),
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
