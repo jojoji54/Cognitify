@@ -1,4 +1,4 @@
-import 'package:cognitify/screens/home_screen.dart';
+import 'package:cognitify/screens/home/home_screen.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 
 class CognitifyApp extends StatelessWidget {

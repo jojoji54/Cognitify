@@ -1,3 +1,4 @@
+import 'package:cognitify/screens/home/widget/category_buttons.dart';
 import 'package:cognitify/screens/test_selection_screen.dart';
 import 'package:dashed_circular_progress_bar/dashed_circular_progress_bar.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +15,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ValueNotifier<double> _valueNotifier0 = ValueNotifier(0);
   final ValueNotifier<double> _valueNotifier = ValueNotifier(0);
+  bool showIcons = false;
+
+  void toggleIcons() {
+    setState(() {
+      showIcons = !showIcons;
+    });
+  }
+
+  void onCategorySelected(String category) {
+    print("🔎 Has seleccionado: $category");
+    // Aquí puedes navegar a la pantalla correspondiente
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -82,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: NeumorphicButton(
                         onPressed: () {
+                          showIcons=false;
                           HapticFeedback.lightImpact();
                           Navigator.push(
                             context,
@@ -161,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: NeumorphicButton(
-                    onPressed: () {},
+                    onPressed: toggleIcons,
                     style: NeumorphicStyle(
                       shape: NeumorphicShape.flat,
                       boxShape: NeumorphicBoxShape.roundRect(
@@ -226,6 +241,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const SizedBox(height: 20),
+            if (showIcons==true)
+              CategoryButtons(onCategorySelected: onCategorySelected),
           ],
         ),
       ),

@@ -21,13 +21,17 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       age: fields[1] as int,
       educationLevel: fields[2] as String,
       createdAt: fields[3] as DateTime,
+      nativeLanguage: fields[4] as String?,
+      maritalStatus: fields[5] as String?,
+      cognitiveStatus: fields[6] as String?,
+      physicalActivityLevel: fields[7] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProfile obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
@@ -35,7 +39,15 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
       ..writeByte(2)
       ..write(obj.educationLevel)
       ..writeByte(3)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(4)
+      ..write(obj.nativeLanguage)
+      ..writeByte(5)
+      ..write(obj.maritalStatus)
+      ..writeByte(6)
+      ..write(obj.cognitiveStatus)
+      ..writeByte(7)
+      ..write(obj.physicalActivityLevel);
   }
 
   @override
