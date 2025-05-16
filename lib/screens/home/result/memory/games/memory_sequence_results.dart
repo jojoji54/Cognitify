@@ -1,4 +1,5 @@
 // lib/screens/results/games/memory_sequence_results.dart
+import 'package:cognitify/models/user_profile.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:hive/hive.dart';
 import 'package:cognitify/models/test_result.dart';
@@ -27,17 +28,40 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
   Future<void> _loadResults() async {
     final resultsBox = await Hive.openBox<TestResult>('resultsBox');
     final datasetBox = await Hive.openBox<DatasetInfo>('datasets');
+    final userBox = await Hive.openBox<UserProfile>('userBox');
 
     // Cargar resultados del usuario
     results = resultsBox.values
         .where((r) => r.testName == "Secuencia de Números")
         .toList();
 
-    // Cargar datos del dataset
+    // Cargar perfil del usuario
+    final userProfile = userBox.get('profile');
+    int userAge = userProfile?.age ?? 30;
+
+    // Mapea el nivel de educación del perfil
+    final educationLevelMapping = {
+      "Primaria": "1.0",
+      "Secundaria": "2.0",
+      "Bachillerato": "3.0",
+      "Universitario": "4.0",
+      "FP": "3.0",
+      "Postgrado": "5.0",
+      "Otro": "6.0"
+    };
+
+    final genderMapping = {"Masculino": "m", "Femenino": "f", "Otro": null};
+
+    final userEducationLevel =
+        educationLevelMapping[userProfile?.educationLevel ?? "Otro"];
+    final userGender = genderMapping[userProfile?.gender ?? "Otro"];
+
+    // Cargar datos del dataset por tipo (Memoria)
     final dataset = datasetBox.values.firstWhere(
-      (d) => d.name == "Battery 14",
+      (d) =>
+          d.type == "Memoria" && d.jsonData != null && d.jsonData!.isNotEmpty,
       orElse: () => DatasetInfo(
-        name: "Battery 14",
+        name: "Sin datos",
         url: "",
         type: "Memoria",
         dateAdded: DateTime.now(),
@@ -45,15 +69,30 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
       ),
     );
 
-    if (dataset.jsonData != null) {
-      datasetScores = dataset.jsonData!
-          .map((entry) => double.tryParse(entry["raw_score"].toString()) ?? 0.0)
-          .toList();
-    }
+    // Filtrar usando el perfil del usuario
+    datasetScores = dataset.jsonData!
+        .where((entry) {
+          final entryAge = double.tryParse(entry["age"]?.toString() ?? "");
+          final entryEducation = entry["education_level"]?.toString();
+          final entryGender = entry["gender"]?.toString();
 
-    // Limitamos los datos para no sobrecargar el gráfico
-    results = results.take(50).toList();
-    datasetScores = datasetScores.take(50).toList();
+          // Verifica la edad
+          final ageMatch = entryAge == null || entryAge == userAge;
+
+          // Verifica el nivel de educación
+          final educationMatch = entryEducation == null ||
+              entryEducation == "" ||
+              entryEducation == userEducationLevel;
+
+          // Verifica el género
+          final genderMatch = entryGender == null ||
+              entryGender == "" ||
+              entryGender == userGender;
+
+          return ageMatch && educationMatch && genderMatch;
+        })
+        .map((entry) => double.tryParse(entry["raw_score"].toString()) ?? 0.0)
+        .toList();
 
     setState(() {
       isLoading = false;
@@ -70,6 +109,18 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
       return const Center(
         child: Text(
           "No hay resultados para 'Secuencia de Números'.",
+          style: TextStyle(
+            fontSize: 18,
+            color: Color.fromARGB(255, 80, 80, 80),
+          ),
+        ),
+      );
+    }
+
+    if (datasetScores.isEmpty) {
+      return const Center(
+        child: Text(
+          "No hay resultados para tu tipo de perfil",
           style: TextStyle(
             fontSize: 18,
             color: Color.fromARGB(255, 80, 80, 80),
@@ -96,8 +147,9 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
   }
 
   Widget _buildSummaryCard() {
-    final averageScore = results.expand((r) => r.scores).reduce((a, b) => a + b) /
-        results.expand((r) => r.scores).length;
+    final averageScore =
+        results.expand((r) => r.scores).reduce((a, b) => a + b) /
+            results.expand((r) => r.scores).length;
     final datasetAverage = datasetScores.isNotEmpty
         ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
         : 0.0;
@@ -156,10 +208,14 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
             lineBarsData: [
               // Datos del Usuario
               LineChartBarData(
-                spots: results.asMap().entries.map((entry) => FlSpot(
-                      entry.key.toDouble(),
-                      entry.value.scores.last,
-                    )).toList(),
+                spots: results
+                    .asMap()
+                    .entries
+                    .map((entry) => FlSpot(
+                          entry.key.toDouble(),
+                          entry.value.scores.last,
+                        ))
+                    .toList(),
                 isCurved: true,
                 dotData: FlDotData(show: true),
                 belowBarData: BarAreaData(show: false),

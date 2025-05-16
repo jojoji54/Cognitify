@@ -1,3 +1,4 @@
+// lib/screens/user_profile_screen.dart
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:hive/hive.dart';
 import 'package:cognitify/models/user_profile.dart';
@@ -17,92 +18,64 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   String? _maritalStatus;
   String? _cognitiveStatus;
   String? _physicalActivity;
+  String? _gender;
 
-  final List<String> languages = [
-    "Español",
-    "Inglés",
-    "Francés",
-    "Alemán",
-    "Otro"
-  ];
-  final List<String> maritalStatuses = [
-    "Soltero",
-    "Casado",
-    "Divorciado",
-    "Viudo",
-    "Otro"
-  ];
-  final List<String> cognitiveStatuses = [
-    "Normal",
-    "Deterioro Cognitivo Leve",
-    "Demencia",
-    "Otro"
-  ];
-  final List<String> physicalActivityLevels = [
-    "Sedentario",
-    "Ligero",
-    "Moderado",
-    "Intenso"
-  ];
-  final List<String> educationLevels = [
-    "Primaria",
-    "Secundaria",
-    "Bachillerato",
-    "Universitario",
-    "Postgrado",
-    "Otro"
-  ];
+  final List<String> languages = ["Español", "Inglés", "Francés", "Alemán", "Otro"];
+  final List<String> maritalStatuses = ["Soltero", "Casado", "Divorciado", "Viudo", "Otro"];
+  final List<String> cognitiveStatuses = ["Normal", "Deterioro Cognitivo Leve", "Demencia", "Otro"];
+  final List<String> physicalActivityLevels = ["Sedentario", "Ligero", "Moderado", "Intenso"];
+  final List<String> educationLevels = ["Primaria", "Secundaria", "Bachillerato","FP", "Universitario", "Postgrado", "Otro"];
+  final List<String> genders = ["Masculino", "Femenino", "Otro"];
 
   void saveProfile() async {
-  final name = _nameController.text.trim();
-  final age = int.tryParse(_ageController.text.trim()) ?? 0;
+    final name = _nameController.text.trim();
+    final age = int.tryParse(_ageController.text.trim()) ?? 0;
 
-  if (name.isEmpty ||
-      age <= 0 ||
-      _educationLevel == null ||
-      _language == null ||
-      _maritalStatus == null ||
-      _cognitiveStatus == null ||
-      _physicalActivity == null) {
+    if (name.isEmpty ||
+        age <= 0 ||
+        _educationLevel == null ||
+        _language == null ||
+        _maritalStatus == null ||
+        _cognitiveStatus == null ||
+        _physicalActivity == null ||
+        _gender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Por favor, completa todos los campos obligatorios."),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final userProfile = UserProfile(
+      name: name,
+      age: age,
+      educationLevel: _educationLevel!,
+      createdAt: DateTime.now(),
+      nativeLanguage: _language!,
+      maritalStatus: _maritalStatus!,
+      cognitiveStatus: _cognitiveStatus!,
+      physicalActivityLevel: _physicalActivity!,
+      gender: _gender!,
+    );
+
+    final userBox = await Hive.openBox<UserProfile>('userBox');
+    userBox.put('profile', userProfile);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text("Por favor, completa todos los campos obligatorios."),
+        content: Text("✅ Perfil guardado correctamente."),
         duration: Duration(seconds: 2),
-        backgroundColor: Colors.redAccent,
+        backgroundColor: Colors.green,
       ),
     );
-    return;
+
+    Future.delayed(const Duration(seconds: 1), () {
+      Navigator.pop(context);
+    });
   }
-
-  final userProfile = UserProfile(
-    name: name,
-    age: age,
-    educationLevel: _educationLevel!,
-    createdAt: DateTime.now(),
-    nativeLanguage: _language!,
-    maritalStatus: _maritalStatus!,
-    cognitiveStatus: _cognitiveStatus!,
-    physicalActivityLevel: _physicalActivity!,
-  );
-
-  final userBox = await Hive.openBox<UserProfile>('userBox');
-  userBox.put('profile', userProfile);
-
-  // Mensaje de éxito
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text("✅ Perfil guardado correctamente."),
-      duration: Duration(seconds: 2),
-      backgroundColor: Colors.green,
-    ),
-  );
-
-  // Vuelve a la pantalla anterior después de un breve retraso para que se vea el mensaje
-  Future.delayed(const Duration(seconds: 1), () {
-    Navigator.pop(context);
-  });
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -131,30 +104,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             children: [
               buildTextField("Nombre (obligatorio)", _nameController),
               const SizedBox(height: 15),
-              buildTextField("Edad (obligatorio)", _ageController,
-                  isNumeric: true),
+              buildTextField("Edad (obligatorio)", _ageController, isNumeric: true),
               const SizedBox(height: 15),
-              buildDropdownField("Nivel de Educación (obligatorio)",
-                  educationLevels, (value) => _educationLevel = value),
+              buildDropdownField("Nivel de Educación (obligatorio)", educationLevels, (value) => _educationLevel = value),
               const SizedBox(height: 15),
-              buildDropdownField("Idioma Nativo (obligatorio)", languages,
-                  (value) => _language = value),
+              buildDropdownField("Género (obligatorio)", genders, (value) => _gender = value),
               const SizedBox(height: 15),
-              buildDropdownField("Estado Civil (obligatorio)", maritalStatuses,
-                  (value) => _maritalStatus = value),
+              buildDropdownField("Idioma Nativo (obligatorio)", languages, (value) => _language = value),
               const SizedBox(height: 15),
-              buildDropdownField("Estado Cognitivo (obligatorio)",
-                  cognitiveStatuses, (value) => _cognitiveStatus = value),
+              buildDropdownField("Estado Civil (obligatorio)", maritalStatuses, (value) => _maritalStatus = value),
               const SizedBox(height: 15),
-              buildDropdownField("Nivel de Actividad Física (obligatorio)",
-                  physicalActivityLevels, (value) => _physicalActivity = value),
+              buildDropdownField("Estado Cognitivo (obligatorio)", cognitiveStatuses, (value) => _cognitiveStatus = value),
+              const SizedBox(height: 15),
+              buildDropdownField("Nivel de Actividad Física (obligatorio)", physicalActivityLevels, (value) => _physicalActivity = value),
               const SizedBox(height: 30),
               NeumorphicButton(
                 onPressed: saveProfile,
                 style: NeumorphicStyle(
                   shape: NeumorphicShape.flat,
-                  boxShape:
-                      NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+                  boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
                   depth: 6,
                 ),
                 child: const Padding(
@@ -177,8 +145,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget buildTextField(String hint, TextEditingController controller,
-      {bool isNumeric = false}) {
+  Widget buildTextField(String hint, TextEditingController controller, {bool isNumeric = false}) {
     return Neumorphic(
       style: NeumorphicStyle(
         depth: -4,
@@ -201,8 +168,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget buildDropdownField(
-      String hint, List<String> options, ValueChanged<String?> onChanged) {
+  Widget buildDropdownField(String hint, List<String> options, ValueChanged<String?> onChanged) {
     return Neumorphic(
       style: NeumorphicStyle(
         depth: -4,
@@ -217,12 +183,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         hint: Text(hint),
         value: null,
         onChanged: onChanged,
-        items: options
-            .map((option) => DropdownMenuItem(
-                  value: option,
-                  child: Text(option),
-                ))
-            .toList(),
+        items: options.map((option) => DropdownMenuItem(
+              value: option,
+              child: Text(option),
+            )).toList(),
       ),
     );
   }

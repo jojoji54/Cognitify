@@ -29,6 +29,9 @@ class UserProfile extends HiveObject {
   @HiveField(7)
   String? physicalActivityLevel;
 
+  @HiveField(8)
+  String? gender;  // Añadimos el género
+
   UserProfile({
     required this.name,
     required this.age,
@@ -38,5 +41,6 @@ class UserProfile extends HiveObject {
     this.maritalStatus,
     this.cognitiveStatus,
     this.physicalActivityLevel,
+    this.gender,  // Nuevo campo
   });
 }
