@@ -1,6 +1,8 @@
+// lib/screens/results/games/memory_sequence_results.dart
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:hive/hive.dart';
 import 'package:cognitify/models/test_result.dart';
+import 'package:cognitify/models/dataset_info.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:math';
 
@@ -12,7 +14,8 @@ class MemorySequenceResults extends StatefulWidget {
 }
 
 class _MemorySequenceResultsState extends State<MemorySequenceResults> {
-  late List<TestResult> results = [];
+  List<TestResult> results = [];
+  List<double> datasetScores = [];
   bool isLoading = true;
 
   @override
@@ -23,34 +26,34 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
 
   Future<void> _loadResults() async {
     final resultsBox = await Hive.openBox<TestResult>('resultsBox');
-    setState(() {
-      results = resultsBox.values
-          .where((r) => r.testName == "Secuencia de Números")
+    final datasetBox = await Hive.openBox<DatasetInfo>('datasets');
+
+    // Cargar resultados del usuario
+    results = resultsBox.values
+        .where((r) => r.testName == "Secuencia de Números")
+        .toList();
+
+    // Cargar datos del dataset
+    final dataset = datasetBox.values.firstWhere(
+      (d) => d.name == "Battery 14",
+      orElse: () => DatasetInfo(
+        name: "Battery 14",
+        url: "",
+        type: "Memoria",
+        dateAdded: DateTime.now(),
+        jsonData: [],
+      ),
+    );
+
+    if (dataset.jsonData != null) {
+      datasetScores = dataset.jsonData!
+          .map((entry) => double.tryParse(entry["raw_score"].toString()) ?? 0.0)
           .toList();
+    }
+
+    setState(() {
       isLoading = false;
     });
-  }
-
-  double _calculateAverageScore() {
-    if (results.isEmpty) return 0.0;
-    final totalScore = results
-        .map((result) => result.scores.last)
-        .reduce((a, b) => a + b);
-    return totalScore / results.length;
-  }
-
-  double _calculateAverageResponseTime() {
-    if (results.isEmpty) return 0.0;
-    final totalDuration = results
-        .map((result) => result.durations.last.inSeconds)
-        .reduce((a, b) => a + b);
-    return totalDuration / results.length;
-  }
-
-  double _calculateAccuracy() {
-    if (results.isEmpty) return 0.0;
-    final totalCorrect = results.where((r) => r.scores.last == 100.0).length;
-    return (totalCorrect / results.length) * 100;
   }
 
   @override
@@ -71,26 +74,43 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
       );
     }
 
-    final averageScore = _calculateAverageScore();
-    final averageResponseTime = _calculateAverageResponseTime();
-    final accuracy = _calculateAccuracy();
+    // Calcula estadísticas
+    final averageScore =
+        results.expand((r) => r.scores).reduce((a, b) => a + b) /
+            results.expand((r) => r.scores).length;
+    final averageResponseTime = results
+            .expand((r) => r.durations)
+            .map((d) => d.inSeconds)
+            .reduce((a, b) => a + b) /
+        results.expand((r) => r.durations).length;
+    final accuracy =
+        (results.expand((r) => r.scores).where((s) => s == 100).length /
+                results.expand((r) => r.scores).length) *
+            100;
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildSummaryCard(averageScore, averageResponseTime, accuracy),
-          const SizedBox(height: 20),
-          _buildLineChart(),
-          const SizedBox(height: 20),
-          _buildDetailedResultsTable(),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSummaryCard(averageScore, averageResponseTime, accuracy),
+            const SizedBox(height: 20),
+            _buildLineChart(),
+            const SizedBox(height: 20),
+            _buildResultsTable(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSummaryCard(double averageScore, double averageResponseTime, double accuracy) {
+  Widget _buildSummaryCard(
+      double averageScore, double averageResponseTime, double accuracy) {
+    final datasetAverage = datasetScores.isNotEmpty
+        ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
+        : 0.0;
+
     return Neumorphic(
       style: NeumorphicStyle(
         depth: 6,
@@ -111,10 +131,17 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
           ),
           const SizedBox(height: 20),
           Text(
-            "Puntuación Promedio: ${averageScore.toStringAsFixed(2)}",
+            "Puntuación Promedio (Usuario): ${averageScore.toStringAsFixed(2)}",
             style: const TextStyle(
               fontSize: 18,
               color: Color.fromARGB(255, 80, 80, 80),
+            ),
+          ),
+          Text(
+            "Puntuación Promedio (Dataset): ${datasetAverage.toStringAsFixed(2)}",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 120, 120, 120),
             ),
           ),
           Text(
@@ -164,7 +191,7 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 200,
+            height: 300,
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(show: true),
@@ -190,7 +217,22 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
                     isCurved: true,
                     dotData: FlDotData(show: false),
                     belowBarData: BarAreaData(show: false),
+                    color: const Color.fromARGB(255, 80, 39, 176),
                   ),
+                  if (datasetScores.isNotEmpty)
+                    LineChartBarData(
+                      spots: List.generate(
+                        datasetScores.length > 50 ? 50 : datasetScores.length,
+                        (index) => FlSpot(
+                          index.toDouble(),
+                          datasetScores[index],
+                        ),
+                      ),
+                      isCurved: true,
+                      dotData: FlDotData(show: false),
+                      belowBarData: BarAreaData(show: false),
+                      color: const Color.fromARGB(255, 120, 120, 120),
+                    ),
                 ],
               ),
             ),
@@ -200,7 +242,7 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
     );
   }
 
-  Widget _buildDetailedResultsTable() {
+  Widget _buildResultsTable() {
     return Neumorphic(
       style: NeumorphicStyle(
         depth: 6,
@@ -208,41 +250,7 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
         color: NeumorphicTheme.baseColor(context),
       ),
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            "📋 Detalles de los Resultados",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 47, 47, 47),
-            ),
-          ),
-          const SizedBox(height: 20),
-          ...results.take(10).map((result) {
-            final date = result.date.toLocal().toString().split(' ')[0];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 15),
-              child: Neumorphic(
-                style: NeumorphicStyle(
-                  depth: -4,
-                  boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
-                  color: NeumorphicTheme.baseColor(context),
-                ),
-                padding: const EdgeInsets.all(15),
-                child: Text(
-                  "📅 $date | 🏆 ${result.scores.last.toStringAsFixed(2)} puntos | ⏱️ ${result.durations.last.inSeconds} seg",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color.fromARGB(255, 80, 80, 80),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ],
-      ),
+      child: const Text("📋 Aquí irá la tabla de resultados detallados."),
     );
   }
 }
