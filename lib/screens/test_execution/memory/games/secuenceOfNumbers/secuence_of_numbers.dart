@@ -2,8 +2,10 @@ import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/info_card.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/input_pad.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/neumorphic_app_bar.dart';
+import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/results_card.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/sequence_display.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/start_button.dart';
+import 'package:cognitify/utils/test_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
@@ -69,12 +71,32 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
   }
 
   void checkAnswer() {
+    try {
+      final startTime = DateTime.now();
+
+    // Calcula si la secuencia es correcta
     bool isCorrect = userInput == sequence.join("");
-    final duration = DateTime.now().difference(startTime!);
+    final duration = DateTime.now().difference(startTime);
     int errors = isCorrect ? 0 : sequence.length - userInput.length;
     double score =
         isCorrect ? 100.0 : (userInput.length / sequence.length) * 100.0;
 
+    // Datos sin procesar para guardar en Hive
+    final rawData = {
+      "sequenceLength": sequenceLength,
+      "userInput": userInput,
+      "expected": sequence.join(""),
+      "errors": errors,
+      "responseTime": duration.inMilliseconds,
+      "difficulty": sequenceLength,
+      "correct": isCorrect,
+    };
+
+    // Guarda el resultado
+    Constant.saveTestResult(
+        "Secuencia de Números", score, duration, rawData, sequenceLength);
+
+    // Muestra el resultado al usuario
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(isCorrect
@@ -83,12 +105,21 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
       ),
     );
 
+    // Reinicia el estado del juego
     setState(() {
       testStarted = false;
       showInput = false;
       userInput = "";
-      startTime = null;
     });
+      
+    } catch (e) {
+       ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Algo ha ido mal :("),
+      ),
+    );
+    } 
+    
   }
 
   @override
@@ -116,7 +147,9 @@ class _SequenceOfNumbersState extends State<SequenceOfNumbers> {
                     },
                   ),
                 ],
-                if (showInfo) const InfoCard(),
+                if (showInfo) ...[
+                  const ResultsCard(testName: "Secuencia de Números"),
+                ],
                 if (testStarted && !showInput)
                   SequenceDisplay(sequence: sequence),
                 if (showInput)
