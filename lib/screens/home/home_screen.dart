@@ -96,8 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: NeumorphicButton(
                         onPressed: () {
-                          showIcons=false;
                           HapticFeedback.lightImpact();
+                          setState(() {
+                            showIcons = false;
+                          });
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -241,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            if (showIcons==true)
+            if (showIcons == true)
               CategoryButtons(onCategorySelected: onCategorySelected),
           ],
         ),
