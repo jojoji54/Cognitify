@@ -193,7 +193,7 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
             const SizedBox(height: 20),
             _buildLineChart(),
             const SizedBox(height: 20),
-            _buildResultsTable(),
+           // _buildResultsTable(),
           ],
         ),
       ),
@@ -266,64 +266,98 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
   }
 
   Widget _buildLineChart() {
-    return Neumorphic(
-      style: NeumorphicStyle(
-        depth: 6,
-        boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
-        color: NeumorphicTheme.baseColor(context),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: SizedBox(
-        height: 300,
-        child: LineChart(
-          LineChartData(
-            gridData: FlGridData(show: true),
-            lineBarsData: [
-              // Datos del Usuario
-              // Datos del Usuario (limitado a los últimos 50)
-              LineChartBarData(
-                spots: results
-                    .expand((r) => r.scores)
-                    .skip((results.expand((r) => r.scores).length - 50)
-                        .clamp(0, 50))
-                    .toList()
-                    .asMap()
-                    .entries
-                    .map((entry) => FlSpot(
-                          entry.key.toDouble(),
-                          entry.value,
-                        ))
-                    .toList(),
-                isCurved: true,
-                dotData: FlDotData(show: true),
-                belowBarData: BarAreaData(show: false),
-                color: const Color.fromARGB(255, 80, 39, 176),
-              ),
-
-              // Datos del Dataset
-              // Datos del Dataset (limitado a los últimos 50 puntos)
-              LineChartBarData(
-                spots: datasetScores
-                    .skip((datasetScores.length - 50).clamp(0, 50))
-                    .toList()
-                    .asMap()
-                    .entries
-                    .map((entry) => FlSpot(
-                          entry.key.toDouble(),
-                          entry.value,
-                        ))
-                    .toList(),
-                isCurved: true,
-                dotData: FlDotData(show: false),
-                belowBarData: BarAreaData(show: false),
-                color: const Color.fromARGB(255, 120, 120, 120),
-              ),
-            ],
+  return Neumorphic(
+    style: NeumorphicStyle(
+      depth: 6,
+      boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+      color: NeumorphicTheme.baseColor(context),
+    ),
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      children: [
+        SizedBox(
+          height: 300,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(show: true),
+              lineBarsData: [
+                // Datos del Usuario (limitado a los últimos 50)
+                LineChartBarData(
+                  spots: results
+                      .expand((r) => r.scores)
+                      .skip((results.expand((r) => r.scores).length - 50)
+                          .clamp(0, 50))
+                      .toList()
+                      .asMap()
+                      .entries
+                      .map((entry) => FlSpot(
+                            entry.key.toDouble(),
+                            entry.value,
+                          ))
+                      .toList(),
+                  isCurved: true,
+                  dotData: FlDotData(show: true),
+                  belowBarData: BarAreaData(show: false),
+                  color: const Color.fromARGB(255, 80, 39, 176),
+                ),
+                // Datos del Dataset (limitado a los últimos 50 puntos)
+                LineChartBarData(
+                  spots: datasetScores
+                      .skip((datasetScores.length - 50).clamp(0, 50))
+                      .toList()
+                      .asMap()
+                      .entries
+                      .map((entry) => FlSpot(
+                            entry.key.toDouble(),
+                            entry.value,
+                          ))
+                      .toList(),
+                  isCurved: true,
+                  dotData: FlDotData(show: false),
+                  belowBarData: BarAreaData(show: false),
+                  color: const Color.fromARGB(255, 120, 120, 120),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 10),
+        IconButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: const Text("📊 Información del Gráfico"),
+                  content: const Text(
+                    "Este gráfico muestra la evolución de tu rendimiento en el test de 'Secuencia de Números'.\n\n"
+                    "🔹 Línea morada: Tus últimos 50 resultados.\n"
+                    "🔹 Línea gris: Resultados promedio del dataset para tu perfil.\n\n"
+                    "Cada punto representa un intento individual, y las curvas están suavizadas para mostrar tendencias."
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text("Cerrar"),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+          icon: const Icon(
+            Icons.info_outline_rounded,
+            color: Color.fromARGB(255, 80, 39, 176),
+            size: 30,
+          ),
+        )
+      ],
+    ),
+  );
+}
+
 
   Widget _buildResultsTable() {
     if (results.isEmpty) {
