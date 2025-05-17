@@ -18,6 +18,10 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
   List<TestResult> results = [];
   List<double> datasetScores = [];
   bool isLoading = true;
+  double _averageScore = 0.0;
+  double _averageResponseTime = 0.0;
+  double _accuracy = 0.0;
+  double _userPercentile = 0.0;
 
   @override
   void initState() {
@@ -44,8 +48,8 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
       "Primaria": "1.0",
       "Secundaria": "2.0",
       "Bachillerato": "3.0",
-      "Universitario": "4.0",
       "FP": "3.0",
+      "Universitario": "4.0",
       "Postgrado": "5.0",
       "Otro": "6.0"
     };
@@ -94,6 +98,51 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
         .map((entry) => double.tryParse(entry["raw_score"].toString()) ?? 0.0)
         .toList();
 
+    // Calcula las estadísticas del usuario
+    final userScores = results.expand((r) => r.scores).toList();
+
+    // Puntuación promedio del usuario
+    _averageScore = userScores.isNotEmpty
+        ? userScores.reduce((a, b) => a + b) / userScores.length
+        : 0.0;
+
+    // Tiempo de respuesta promedio del usuario
+    final totalDurations =
+        results.expand((r) => r.durations).map((d) => d.inSeconds).toList();
+    _averageResponseTime = totalDurations.isNotEmpty
+        ? totalDurations.reduce((a, b) => a + b) / totalDurations.length
+        : 0.0;
+
+    // Precisión total del usuario
+    final totalCorrect = userScores.where((s) => s > 0).length;
+    final totalAttempts = userScores.length;
+    _accuracy = totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0.0;
+
+    // Calcular percentil basado en dificultad
+
+    int totalPoints = 0;
+    int totalDifficulties = 0;
+    int maxPossiblePoints = 0;
+
+    for (var result in results) {
+      for (int i = 0; i < result.scores.length; i++) {
+        double score = result.scores[i];
+        int difficulty = result.rawData[i]["difficulty"] ?? 1;
+
+        // Añade los puntos reales, ajustados por dificultad
+        double adjustedScore = score * (1 + (difficulty - 1) * 0.1);
+        totalPoints += adjustedScore.round();
+
+        // Calcula el máximo posible para normalizar
+        maxPossiblePoints += 100 * (1 + (difficulty - 1) * 0.1).round();
+        totalDifficulties++;
+      }
+    }
+
+// Ajusta el percentil para que esté entre 0 y 100
+    _userPercentile =
+        totalDifficulties > 0 ? (totalPoints / maxPossiblePoints) * 100 : 0.0;
+
     setState(() {
       isLoading = false;
     });
@@ -135,7 +184,12 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildSummaryCard(),
+            _buildSummaryCard(
+              _averageScore,
+              _averageResponseTime,
+              _accuracy,
+              _userPercentile,
+            ),
             const SizedBox(height: 20),
             _buildLineChart(),
             const SizedBox(height: 20),
@@ -146,10 +200,8 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
     );
   }
 
-  Widget _buildSummaryCard() {
-    final averageScore =
-        results.expand((r) => r.scores).reduce((a, b) => a + b) /
-            results.expand((r) => r.scores).length;
+  Widget _buildSummaryCard(double averageScore, double averageResponseTime,
+      double accuracy, double userPercentile) {
     final datasetAverage = datasetScores.isNotEmpty
         ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
         : 0.0;
@@ -185,6 +237,27 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
             style: const TextStyle(
               fontSize: 18,
               color: Color.fromARGB(255, 120, 120, 120),
+            ),
+          ),
+          Text(
+            "Tiempo de Respuesta Promedio: ${averageResponseTime.toStringAsFixed(2)}s",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 80, 80, 80),
+            ),
+          ),
+          Text(
+            "Precisión Total: ${accuracy.toStringAsFixed(2)}%",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 80, 80, 80),
+            ),
+          ),
+          Text(
+            "Percentil del Usuario: ${userPercentile.toStringAsFixed(2)}%",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 80, 80, 80),
             ),
           ),
         ],
