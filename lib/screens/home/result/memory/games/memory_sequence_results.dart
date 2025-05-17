@@ -1,5 +1,8 @@
 // lib/screens/results/games/memory_sequence_results.dart
 import 'package:cognitify/models/user_profile.dart';
+import 'package:cognitify/screens/home/result/memory/games/widget/neumorphic_analysis_tile.dart';
+import 'package:cognitify/services/ai/secuence_of_number_ai.dart';
+import 'package:cognitify/utils/test_constants.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:hive/hive.dart';
 import 'package:cognitify/models/test_result.dart';
@@ -22,6 +25,10 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
   double _averageResponseTime = 0.0;
   double _accuracy = 0.0;
   double _userPercentile = 0.0;
+  bool isLoadingAnalysis = false;
+  String analysisResult = "";
+  String dataSetName = "";
+  String dataSetUrl = "";
 
   @override
   void initState() {
@@ -72,6 +79,8 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
         jsonData: [],
       ),
     );
+    dataSetName = dataset.name;
+    dataSetUrl = dataset.url;
 
     // Filtrar usando el perfil del usuario
     datasetScores = dataset.jsonData!
@@ -148,6 +157,38 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
     });
   }
 
+  void _analyzeResults() async {
+    setState(() {
+      isLoadingAnalysis = true;
+      analysisResult = "";
+    });
+
+    try {
+      Constant.prompt = Constant.generatePrompt(
+          _averageScore,
+          _averageResponseTime,
+          _accuracy,
+          _userPercentile,
+          dataSetName,
+          dataSetUrl);
+      final String response =
+          await SecuenceOfNumberAI.rewriteText(Constant.prompt);
+
+      setState(() {
+        analysisResult = response;
+      });
+    } catch (e) {
+      setState(() {
+        analysisResult =
+            "Error al procesar el análisis. Inténtalo de nuevo más tarde.";
+      });
+    } finally {
+      setState(() {
+        isLoadingAnalysis = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -181,20 +222,31 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSummaryCard(
-              _averageScore,
-              _averageResponseTime,
-              _accuracy,
-              _userPercentile,
-            ),
-            const SizedBox(height: 20),
-            _buildLineChart(),
-            const SizedBox(height: 20),
-           // _buildResultsTable(),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.only(left: 15, right: 15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 20),
+              _buildSummaryCard(
+                _averageScore,
+                _averageResponseTime,
+                _accuracy,
+                _userPercentile,
+              ),
+              const SizedBox(height: 20),
+              _buildLineChart(),
+              const SizedBox(height: 20),
+              _buildResultsTable(),
+              const SizedBox(height: 20),
+              NeumorphicAnalysisTile(
+                isLoading: isLoadingAnalysis,
+                analysisResult: analysisResult,
+                onAnalyze: _analyzeResults,
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -266,98 +318,96 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
   }
 
   Widget _buildLineChart() {
-  return Neumorphic(
-    style: NeumorphicStyle(
-      depth: 6,
-      boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
-      color: NeumorphicTheme.baseColor(context),
-    ),
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      children: [
-        SizedBox(
-          height: 300,
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(show: true),
-              lineBarsData: [
-                // Datos del Usuario (limitado a los últimos 50)
-                LineChartBarData(
-                  spots: results
-                      .expand((r) => r.scores)
-                      .skip((results.expand((r) => r.scores).length - 50)
-                          .clamp(0, 50))
-                      .toList()
-                      .asMap()
-                      .entries
-                      .map((entry) => FlSpot(
-                            entry.key.toDouble(),
-                            entry.value,
-                          ))
-                      .toList(),
-                  isCurved: true,
-                  dotData: FlDotData(show: true),
-                  belowBarData: BarAreaData(show: false),
-                  color: const Color.fromARGB(255, 80, 39, 176),
-                ),
-                // Datos del Dataset (limitado a los últimos 50 puntos)
-                LineChartBarData(
-                  spots: datasetScores
-                      .skip((datasetScores.length - 50).clamp(0, 50))
-                      .toList()
-                      .asMap()
-                      .entries
-                      .map((entry) => FlSpot(
-                            entry.key.toDouble(),
-                            entry.value,
-                          ))
-                      .toList(),
-                  isCurved: true,
-                  dotData: FlDotData(show: false),
-                  belowBarData: BarAreaData(show: false),
-                  color: const Color.fromARGB(255, 120, 120, 120),
-                ),
-              ],
+    return Neumorphic(
+      style: NeumorphicStyle(
+        depth: 6,
+        boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+        color: NeumorphicTheme.baseColor(context),
+      ),
+      padding: const EdgeInsets.only(top: 20, bottom: 20, left: 5, right: 5),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 300,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: true),
+                lineBarsData: [
+                  // Datos del Usuario (limitado a los últimos 50)
+                  LineChartBarData(
+                    spots: results
+                        .expand((r) => r.scores)
+                        .skip((results.expand((r) => r.scores).length - 50)
+                            .clamp(0, 50))
+                        .toList()
+                        .asMap()
+                        .entries
+                        .map((entry) => FlSpot(
+                              entry.key.toDouble(),
+                              entry.value,
+                            ))
+                        .toList(),
+                    isCurved: true,
+                    dotData: FlDotData(show: true),
+                    belowBarData: BarAreaData(show: false),
+                    color: const Color.fromARGB(255, 80, 39, 176),
+                  ),
+                  // Datos del Dataset (limitado a los últimos 50 puntos)
+                  LineChartBarData(
+                    spots: datasetScores
+                        .skip((datasetScores.length - 50).clamp(0, 50))
+                        .toList()
+                        .asMap()
+                        .entries
+                        .map((entry) => FlSpot(
+                              entry.key.toDouble(),
+                              entry.value,
+                            ))
+                        .toList(),
+                    isCurved: true,
+                    dotData: FlDotData(show: false),
+                    belowBarData: BarAreaData(show: false),
+                    color: const Color.fromARGB(255, 120, 120, 120),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        IconButton(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: const Text("📊 Información del Gráfico"),
-                  content: const Text(
-                    "Este gráfico muestra la evolución de tu rendimiento en el test de 'Secuencia de Números'.\n\n"
-                    "🔹 Línea morada: Tus últimos 50 resultados.\n"
-                    "🔹 Línea gris: Resultados promedio del dataset para tu perfil.\n\n"
-                    "Cada punto representa un intento individual, y las curvas están suavizadas para mostrar tendencias."
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text("Cerrar"),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-          icon: const Icon(
-            Icons.info_outline_rounded,
-            color: Color.fromARGB(255, 80, 39, 176),
-            size: 30,
-          ),
-        )
-      ],
-    ),
-  );
-}
-
+          const SizedBox(height: 10),
+          IconButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text("📊 Información del Gráfico"),
+                    content: const Text(
+                        "Este gráfico muestra la evolución de tu rendimiento en el test de 'Secuencia de Números'.\n\n"
+                        "🔹 Línea morada: Tus últimos 50 resultados.\n"
+                        "🔹 Línea gris: Resultados promedio del dataset para tu perfil.\n\n"
+                        "Cada punto representa un intento individual, y las curvas están suavizadas para mostrar tendencias."),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text("Cerrar"),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            icon: const Icon(
+              Icons.info_outline_rounded,
+              color: Color.fromARGB(255, 80, 39, 176),
+              size: 30,
+            ),
+          )
+        ],
+      ),
+    );
+  }
 
   Widget _buildResultsTable() {
     if (results.isEmpty) {
@@ -367,7 +417,7 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
           boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
           color: NeumorphicTheme.baseColor(context),
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.only(top: 20, bottom: 20, left: 5, right: 5),
         child: const Text(
           "📋 No hay resultados registrados.",
           style: TextStyle(
@@ -383,124 +433,218 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
 
     for (var result in results.reversed.take(10)) {
       for (int i = 0; i < result.scores.length; i++) {
+        final score = result.scores[i];
+        final precision =
+            (score >= 100) ? "100%" : "${score.toStringAsFixed(2)}%";
+        final errors = result.rawData[i]["errors"] ?? 0;
+        final difficulty = result.rawData[i]["difficulty"] ?? 1;
+
         allResults.add({
           "Fecha": result.date,
-          "Dificultad": result.rawData[i]["difficulty"] ?? 1,
-          "Puntuación": result.scores[i].toStringAsFixed(2),
-          "Tiempo": result.durations[i].inSeconds.toString(),
-          "Precisión": (result.scores[i] >= 100
-              ? "100%"
-              : "${result.scores[i].toStringAsFixed(2)}%"),
-          "Errores": result.rawData[i]["errors"] ?? 0,
+          "Dificultad": difficulty,
+          "Puntuación": score,
+          "Tiempo": result.durations[i].inSeconds,
+          "Precisión": precision,
+          "Errores": errors,
+          "isGood": score >= 100,
+          "isBad": score == 0 ||
+              errors > 3, // Considera "malo" si hay muchos errores
         });
       }
     }
 
-    return Neumorphic(
-      style: NeumorphicStyle(
-        depth: 6,
-        boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
-        color: NeumorphicTheme.baseColor(context),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            "📋 Resultados Detallados",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 47, 47, 47),
-            ),
+    return Column(
+      children: [
+        Neumorphic(
+          style: NeumorphicStyle(
+            depth: 6,
+            boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+            color: NeumorphicTheme.baseColor(context),
           ),
-          const SizedBox(height: 20),
-          Table(
-            border: TableBorder.symmetric(
-              outside: const BorderSide(
-                  color: Color.fromARGB(255, 80, 80, 80), width: 1),
-            ),
-            columnWidths: const {
-              0: FlexColumnWidth(2),
-              1: FlexColumnWidth(1),
-              2: FlexColumnWidth(1),
-              3: FlexColumnWidth(1),
-              4: FlexColumnWidth(1),
-              5: FlexColumnWidth(1),
-            },
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Encabezado
-              const TableRow(
-                decoration:
-                    BoxDecoration(color: Color.fromARGB(255, 200, 200, 200)),
+              const Text(
+                "📋 Resultados Detallados",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 47, 47, 47),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Table(
+                border: const TableBorder.symmetric(
+                  outside: BorderSide(
+                    color: Color.fromARGB(255, 80, 80, 80),
+                    width: 1,
+                  ),
+                ),
+                columnWidths: const {
+                  0: FlexColumnWidth(2),
+                  1: FlexColumnWidth(1),
+                  2: FlexColumnWidth(1),
+                  3: FlexColumnWidth(1),
+                  4: FlexColumnWidth(1),
+                  5: FlexColumnWidth(1),
+                },
                 children: [
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text("Fecha",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  // Encabezado
+                  const TableRow(
+                    decoration: BoxDecoration(
+                        color: Color.fromARGB(255, 200, 200, 200)),
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(3.0),
+                        child: Text("Fecha",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(3.0),
+                        child: Text("Dificultad",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(3.0),
+                        child: Text("Puntuación",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(3.0),
+                        child: Text("Tiempo (s)",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(3.0),
+                        child: Text("Precisión",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(3.0),
+                        child: Text("Errores",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text("Dificultad",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text("Puntuación",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text("Tiempo (s)",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text("Precisión",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text("Errores",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
+                  // Filas de datos
+                  ...allResults.map((result) {
+                    final isGood = result["isGood"];
+                    final isBad = result["isBad"];
+                    final rowColor = isGood
+                        ? const Color.fromARGB(
+                            255, 0, 150, 0) // Verde para buenos resultados
+                        : isBad
+                            ? const Color.fromARGB(
+                                255, 200, 0, 0) // Rojo para malos resultados
+                            : const Color.fromARGB(255, 80, 80,
+                                80); // Gris para resultados neutrales
+
+                    return TableRow(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            result["Fecha"].toString().split(" ").first,
+                            style: TextStyle(color: rowColor),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            result["Dificultad"].toString(),
+                            style: TextStyle(color: rowColor),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            result["Puntuación"].toStringAsFixed(2),
+                            style: TextStyle(color: rowColor),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            result["Tiempo"].toString(),
+                            style: TextStyle(color: rowColor),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            result["Precisión"],
+                            style: TextStyle(color: rowColor),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            result["Errores"].toString(),
+                            style: TextStyle(color: rowColor),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
                 ],
               ),
-              // Filas de datos
-              ...allResults.map((result) {
-                return TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(result["Fecha"].toString().split(" ").first),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(result["Dificultad"].toString()),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(result["Puntuación"]),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(result["Tiempo"]),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(result["Precisión"]),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(result["Errores"].toString()),
-                    ),
-                  ],
-                );
-              }).toList(),
+              const SizedBox(height: 10),
+              IconButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text("📊 Información del Gráfico"),
+                       content: const Text(
+  """
+📅 Fecha:
+La fecha en que se registró el resultado.
+
+⚙️ Dificultad:
+El nivel de dificultad del test, donde 1 es el más fácil y 5 es el más difícil.
+
+🏆 Puntuación:
+El porcentaje de respuestas correctas.
+
+⏱️ Tiempo (s):
+El tiempo promedio que tardaste en responder cada pregunta.
+
+🎯 Precisión:
+El porcentaje de respuestas correctas respecto al total de intentos.
+
+❌ Errores:
+El número de errores cometidos en esta sesión.
+
+💡 Resultados destacados:
+- En verde se muestran los resultados con 100% de precisión.
+- En rojo se muestran los resultados con más de 3 errores o 0% de precisión.
+""",
+),
+
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text("Cerrar"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                icon: const Icon(
+                  Icons.info_outline_rounded,
+                  color: Color.fromARGB(255, 80, 39, 176),
+                  size: 30,
+                ),
+              )
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

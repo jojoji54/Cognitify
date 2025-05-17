@@ -4,10 +4,12 @@ import 'package:cognitify/models/duration_adapter.dart';
 import 'package:cognitify/models/test_result.dart';
 import 'package:cognitify/models/user_profile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load();
 
   // Inicializa Hive
   await Hive.initFlutter();
