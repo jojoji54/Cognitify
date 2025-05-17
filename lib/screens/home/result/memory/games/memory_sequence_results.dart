@@ -280,16 +280,20 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
             gridData: FlGridData(show: true),
             lineBarsData: [
               // Datos del Usuario
+              // Datos del Usuario (limitado a los últimos 50)
               LineChartBarData(
-                spots: results.asMap().entries.expand((entry) {
-                  final indexOffset = entry.key * entry.value.scores.length;
-                  return entry.value.scores.asMap().entries.map((scoreEntry) {
-                    return FlSpot(
-                      (indexOffset + scoreEntry.key).toDouble(),
-                      scoreEntry.value,
-                    );
-                  });
-                }).toList(),
+                spots: results
+                    .expand((r) => r.scores)
+                    .skip((results.expand((r) => r.scores).length - 50)
+                        .clamp(0, 50))
+                    .toList()
+                    .asMap()
+                    .entries
+                    .map((entry) => FlSpot(
+                          entry.key.toDouble(),
+                          entry.value,
+                        ))
+                    .toList(),
                 isCurved: true,
                 dotData: FlDotData(show: true),
                 belowBarData: BarAreaData(show: false),
@@ -297,14 +301,18 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
               ),
 
               // Datos del Dataset
+              // Datos del Dataset (limitado a los últimos 50 puntos)
               LineChartBarData(
-                spots: List.generate(
-                  datasetScores.length,
-                  (index) => FlSpot(
-                    index.toDouble(),
-                    datasetScores[index],
-                  ),
-                ),
+                spots: datasetScores
+                    .skip((datasetScores.length - 50).clamp(0, 50))
+                    .toList()
+                    .asMap()
+                    .entries
+                    .map((entry) => FlSpot(
+                          entry.key.toDouble(),
+                          entry.value,
+                        ))
+                    .toList(),
                 isCurved: true,
                 dotData: FlDotData(show: false),
                 belowBarData: BarAreaData(show: false),
@@ -318,6 +326,42 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
   }
 
   Widget _buildResultsTable() {
+    if (results.isEmpty) {
+      return Neumorphic(
+        style: NeumorphicStyle(
+          depth: 6,
+          boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+          color: NeumorphicTheme.baseColor(context),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: const Text(
+          "📋 No hay resultados registrados.",
+          style: TextStyle(
+            fontSize: 18,
+            color: Color.fromARGB(255, 80, 80, 80),
+          ),
+        ),
+      );
+    }
+
+    // Limita a los últimos 10 resultados
+    final List<Map<String, dynamic>> allResults = [];
+
+    for (var result in results.reversed.take(10)) {
+      for (int i = 0; i < result.scores.length; i++) {
+        allResults.add({
+          "Fecha": result.date,
+          "Dificultad": result.rawData[i]["difficulty"] ?? 1,
+          "Puntuación": result.scores[i].toStringAsFixed(2),
+          "Tiempo": result.durations[i].inSeconds.toString(),
+          "Precisión": (result.scores[i] >= 100
+              ? "100%"
+              : "${result.scores[i].toStringAsFixed(2)}%"),
+          "Errores": result.rawData[i]["errors"] ?? 0,
+        });
+      }
+    }
+
     return Neumorphic(
       style: NeumorphicStyle(
         depth: 6,
@@ -325,7 +369,104 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
         color: NeumorphicTheme.baseColor(context),
       ),
       padding: const EdgeInsets.all(20),
-      child: const Text("📋 Aquí irá la tabla de resultados detallados."),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            "📋 Resultados Detallados",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 47, 47, 47),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Table(
+            border: TableBorder.symmetric(
+              outside: const BorderSide(
+                  color: Color.fromARGB(255, 80, 80, 80), width: 1),
+            ),
+            columnWidths: const {
+              0: FlexColumnWidth(2),
+              1: FlexColumnWidth(1),
+              2: FlexColumnWidth(1),
+              3: FlexColumnWidth(1),
+              4: FlexColumnWidth(1),
+              5: FlexColumnWidth(1),
+            },
+            children: [
+              // Encabezado
+              const TableRow(
+                decoration:
+                    BoxDecoration(color: Color.fromARGB(255, 200, 200, 200)),
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("Fecha",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("Dificultad",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("Puntuación",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("Tiempo (s)",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("Precisión",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("Errores",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              // Filas de datos
+              ...allResults.map((result) {
+                return TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(result["Fecha"].toString().split(" ").first),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(result["Dificultad"].toString()),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(result["Puntuación"]),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(result["Tiempo"]),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(result["Precisión"]),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(result["Errores"].toString()),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
