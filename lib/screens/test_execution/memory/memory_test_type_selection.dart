@@ -1,5 +1,6 @@
-
+import 'package:cognitify/screens/test_execution/memory/games/cards/card_pairs_game.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/secuence_of_numbers.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 
 class MemoryTestTypeSelection extends StatelessWidget {
@@ -32,14 +33,17 @@ class MemoryTestTypeSelection extends StatelessWidget {
             const SizedBox(height: 20),
             NeumorphicButton(
               onPressed: () {
+                HapticFeedback.lightImpact();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SequenceOfNumbers()),
+                  MaterialPageRoute(
+                      builder: (context) => const SequenceOfNumbers()),
                 );
               },
               style: NeumorphicStyle(
                 shape: NeumorphicShape.flat,
-                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+                boxShape:
+                    NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
                 depth: 6,
               ),
               child: const Padding(
@@ -49,7 +53,8 @@ class MemoryTestTypeSelection extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.numbers, size: 30, color: Color.fromARGB(255, 80, 39, 176)),
+                        Icon(Icons.numbers,
+                            size: 30, color: Color.fromARGB(255, 80, 39, 176)),
                         SizedBox(width: 10),
                         Text(
                           "Secuencia de Números",
@@ -61,17 +66,26 @@ class MemoryTestTypeSelection extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Icon(Icons.arrow_forward_ios, size: 20, color: Color.fromARGB(255, 150, 150, 150)),
+                    Icon(Icons.arrow_forward_ios,
+                        size: 20, color: Color.fromARGB(255, 150, 150, 150)),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 20),
             NeumorphicButton(
-              onPressed: () {},
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const CardPairsGame()),
+                );
+              },
               style: NeumorphicStyle(
                 shape: NeumorphicShape.flat,
-                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+                boxShape:
+                    NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
                 depth: 6,
               ),
               child: const Padding(
@@ -81,7 +95,8 @@ class MemoryTestTypeSelection extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.apps, size: 30, color: Color.fromARGB(255, 80, 39, 176)),
+                        Icon(Icons.apps,
+                            size: 30, color: Color.fromARGB(255, 80, 39, 176)),
                         SizedBox(width: 10),
                         Text(
                           "Parejas de Cartas",
@@ -93,7 +108,8 @@ class MemoryTestTypeSelection extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Icon(Icons.arrow_forward_ios, size: 20, color: Color.fromARGB(255, 150, 150, 150)),
+                    Icon(Icons.arrow_forward_ios,
+                        size: 20, color: Color.fromARGB(255, 150, 150, 150)),
                   ],
                 ),
               ),
@@ -103,7 +119,8 @@ class MemoryTestTypeSelection extends StatelessWidget {
               onPressed: () {},
               style: NeumorphicStyle(
                 shape: NeumorphicShape.flat,
-                boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+                boxShape:
+                    NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
                 depth: 6,
               ),
               child: const Padding(
@@ -113,7 +130,8 @@ class MemoryTestTypeSelection extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.grid_view, size: 30, color: Color.fromARGB(255, 80, 39, 176)),
+                        Icon(Icons.grid_view,
+                            size: 30, color: Color.fromARGB(255, 80, 39, 176)),
                         SizedBox(width: 10),
                         Text(
                           "Memoria Espacial",
@@ -125,7 +143,8 @@ class MemoryTestTypeSelection extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Icon(Icons.arrow_forward_ios, size: 20, color: Color.fromARGB(255, 150, 150, 150)),
+                    Icon(Icons.arrow_forward_ios,
+                        size: 20, color: Color.fromARGB(255, 150, 150, 150)),
                   ],
                 ),
               ),
