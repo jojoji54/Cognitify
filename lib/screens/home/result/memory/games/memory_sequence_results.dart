@@ -281,19 +281,21 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
             lineBarsData: [
               // Datos del Usuario
               LineChartBarData(
-                spots: results
-                    .asMap()
-                    .entries
-                    .map((entry) => FlSpot(
-                          entry.key.toDouble(),
-                          entry.value.scores.last,
-                        ))
-                    .toList(),
+                spots: results.asMap().entries.expand((entry) {
+                  final indexOffset = entry.key * entry.value.scores.length;
+                  return entry.value.scores.asMap().entries.map((scoreEntry) {
+                    return FlSpot(
+                      (indexOffset + scoreEntry.key).toDouble(),
+                      scoreEntry.value,
+                    );
+                  });
+                }).toList(),
                 isCurved: true,
                 dotData: FlDotData(show: true),
                 belowBarData: BarAreaData(show: false),
                 color: const Color.fromARGB(255, 80, 39, 176),
               ),
+
               // Datos del Dataset
               LineChartBarData(
                 spots: List.generate(
