@@ -72,32 +72,38 @@ class _CardPairsGameState extends State<CardPairsGame> {
     });
   }
 
-  void _onCardTap(int index) {
-    setState(() {
-      cards[index]["revealed"] = true;
-      selectedIndexes.add(index);
+ void _onCardTap(int index) {
+  // Ignora toques adicionales si ya hay dos cartas reveladas
+  if (selectedIndexes.length == 2) return;
 
-      if (selectedIndexes.length == 2) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          final firstIndex = selectedIndexes[0];
-          final secondIndex = selectedIndexes[1];
+  setState(() {
+    // Revela la carta
+    cards[index]["revealed"] = true;
+    selectedIndexes.add(index);
 
-          if (cards[firstIndex]["icon"] == cards[secondIndex]["icon"]) {
-            // Marca como emparejadas
-            cards[firstIndex]["matched"] = true;
-            cards[secondIndex]["matched"] = true;
-          } else {
-            // Oculta las cartas si no coinciden
-            cards[firstIndex]["revealed"] = false;
-            cards[secondIndex]["revealed"] = false;
-          }
+    // Si se han seleccionado dos cartas, verifica si son pareja
+    if (selectedIndexes.length == 2) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        final firstIndex = selectedIndexes[0];
+        final secondIndex = selectedIndexes[1];
 
-          selectedIndexes.clear();
-          setState(() {});
-        });
-      }
-    });
-  }
+        if (cards[firstIndex]["icon"] == cards[secondIndex]["icon"]) {
+          // Marca como emparejadas
+          cards[firstIndex]["matched"] = true;
+          cards[secondIndex]["matched"] = true;
+        } else {
+          // Oculta las cartas si no coinciden
+          cards[firstIndex]["revealed"] = false;
+          cards[secondIndex]["revealed"] = false;
+        }
+
+        selectedIndexes.clear();
+        setState(() {});
+      });
+    }
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
