@@ -125,25 +125,14 @@ class _TestSelectionScreenState extends State<TestSelectionScreen> {
                                             dataset.subtype == "Secuencia")
                                         .toList(); */
                                     HapticFeedback.lightImpact();
-                                    final hasDataset = await PreferencesService
-                                        .isDatasetSelected(selectedTest!);
-                                    if (hasDataset) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => indexs == 0
-                                              ? const MemoryTestTypeSelection()
-                                              : const MemoryTestTypeSelection(),
-                                        ),
-                                      );
-                                    } else {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                DatasetSelectionScreen()),
-                                      );
-                                    }
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => indexs == 0
+                                            ? const MemoryTestTypeSelection()
+                                            : const MemoryTestTypeSelection(),
+                                      ),
+                                    );
                                   },
                                   style: NeumorphicStyle(
                                     shape: NeumorphicShape.flat,

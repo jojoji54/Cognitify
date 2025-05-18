@@ -2,7 +2,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferencesService {
-  static const _memoryDatasetSelectedKey = 'memoryDatasetSelected';
+  static const _secuenceofnumbersmemoryDatasetSelectedKey = 'secuenceofnumbersmemoryDatasetSelected';
+   static const _cardpairsDatasetSelectedKey = 'cardpairsmemoryDatasetSelected';
   static const _attentionDatasetSelectedKey = 'attentionDatasetSelected';
   static const _reasoningDatasetSelectedKey = 'reasoningDatasetSelected';
 
@@ -29,8 +30,10 @@ class PreferencesService {
 // Obtener la clave correcta para cada tipo de dataset
   static String _getDatasetKey(String datasetType) {
     switch (datasetType.toLowerCase()) {
-      case "memoria":
-        return _memoryDatasetSelectedKey;
+      case "Secuencia de numeros":
+        return _secuenceofnumbersmemoryDatasetSelectedKey;
+      case "Pareja de cartas":
+        return _cardpairsDatasetSelectedKey;
       case "atención":
         return _attentionDatasetSelectedKey;
       case "razonamiento":
