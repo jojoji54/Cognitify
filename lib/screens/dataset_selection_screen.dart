@@ -22,6 +22,7 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
   void loadDatasets() {
     // La caja ya está abierta en main.dart
     datasetBox = Hive.box<DatasetInfo>('datasets');
+    
     setState(() {});
   }
 

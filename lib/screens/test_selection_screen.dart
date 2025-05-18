@@ -1,7 +1,5 @@
-import 'package:cognitify/screens/dataset_selection_screen.dart';
-import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/secuence_of_numbers.dart';
+
 import 'package:cognitify/screens/test_execution/memory/memory_test_type_selection.dart';
-import 'package:cognitify/services/preferences_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animator/flutter_animator.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
