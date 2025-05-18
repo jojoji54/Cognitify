@@ -1,13 +1,14 @@
-// lib/screens/test_execution/memory/games/cardPairs/card_pairs_game.dart
 import 'package:cognitify/screens/test_execution/memory/games/cards/widget/card_grid.dart';
 import 'package:cognitify/screens/test_execution/memory/games/cards/widget/card_info_card.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/difficulty_slider.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/start_button.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/neumorphic_app_bar.dart';
+import 'package:cognitify/utils/test_constants.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:math';
+import 'dart:async';
+import 'package:cognitify/models/test_result.dart';
 
 class CardPairsGame extends StatefulWidget {
   const CardPairsGame({Key? key}) : super(key: key);
@@ -19,11 +20,18 @@ class CardPairsGame extends StatefulWidget {
 class _CardPairsGameState extends State<CardPairsGame> {
   DateTime? startTime;
   int cardPairs = 5;
+  int errors = 0;
   bool gameStarted = false;
   bool showInfo = false;
   List<Map<String, dynamic>> cards = [];
   List<int> selectedIndexes = [];
   int attempts = 0;
+  int matchedPairs = 0;
+  Timer? gameTimer;
+  int gameTime = 0;
+  int sessionNumber = 1;
+  String userId = "R1002P";
+  double? finalScore;
 
   @override
   void initState() {
@@ -59,7 +67,6 @@ class _CardPairsGameState extends State<CardPairsGame> {
       FontAwesomeIcons.user,
     ];
 
-    // Mezcla las cartas
     cards = [...icons.take(cardPairs), ...icons.take(cardPairs)]
         .map((icon) => {"icon": icon, "revealed": false, "matched": false})
         .toList();
@@ -68,42 +75,152 @@ class _CardPairsGameState extends State<CardPairsGame> {
     setState(() {
       gameStarted = true;
       attempts = 0;
+      matchedPairs = 0;
+      errors = 0;
+      gameTime = 0;
       startTime = DateTime.now();
+    });
+
+    gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          gameTime++;
+        });
+      }
     });
   }
 
- void _onCardTap(int index) {
-  // Ignora toques adicionales si ya hay dos cartas reveladas
-  if (selectedIndexes.length == 2) return;
+  void stopGame() {
+    if (gameTimer != null && gameTimer!.isActive) {
+      gameTimer!.cancel();
+      print("🕒 Tiempo total de juego: $gameTime segundos");
+    }
+  }
 
-  setState(() {
-    // Revela la carta
-    cards[index]["revealed"] = true;
-    selectedIndexes.add(index);
+  double calculatePairScore(int pairs, int attempts, Duration duration,
+      int difficulty, int errors, int matchedPairs) {
+    print("🔍 Calculando puntuación para el juego de parejas...");
 
-    // Si se han seleccionado dos cartas, verifica si son pareja
-    if (selectedIndexes.length == 2) {
-      Future.delayed(const Duration(milliseconds: 500), () {
+    // Puntuación base
+    double baseScore = 100.0 + (pairs - 5) * 20.0;
+
+    // Penalización por intentos
+    int maxAttempts = pairs * 2;
+    double attemptPenalty = (attempts - pairs) * 2.0;
+    attemptPenalty = attemptPenalty.clamp(0, 100);
+
+    // Penalización por tiempo
+    int maxTime = difficulty * 15;
+    double timePenalty = (duration.inSeconds / maxTime) * 100.0;
+    timePenalty = timePenalty.clamp(0, 100);
+
+    // Bonificación por velocidad
+    double speedBonus = (pairs * 20) - (duration.inSeconds / (pairs * 2)) * 100;
+    speedBonus = speedBonus.clamp(0, 100);
+
+    // Penalización por errores
+    double errorPenalty = errors * 5.0;
+    errorPenalty = errorPenalty.clamp(0, 100);
+
+    // Bonificación por dificultad
+    double difficultyBonus = difficulty * 5.0;
+    difficultyBonus = difficultyBonus.clamp(0, 100);
+
+    // Puntuación final (máximo 500 puntos)
+    double finalScore = baseScore -
+        attemptPenalty -
+        timePenalty -
+        errorPenalty +
+        speedBonus +
+        difficultyBonus;
+    finalScore = finalScore.clamp(0, 500);
+
+    print("🏁 Puntuación Final: $finalScore");
+    this.finalScore = finalScore;
+    return finalScore;
+  }
+
+  void savePairResult(int pairs, int attempts, Duration duration,
+      int difficulty, int firstIndex, int secondIndex) {
+    try {
+      final score = calculatePairScore(
+          pairs, attempts, duration, difficulty, errors, matchedPairs);
+
+      final onset = startTime?.millisecondsSinceEpoch ??
+          DateTime.now().millisecondsSinceEpoch;
+
+      final rawData = {
+        "onset": onset,
+        "duration": duration.inMilliseconds,
+        "sample": attempts,
+        "trial_type": "PAIR",
+        "response_time": duration.inMilliseconds,
+        "serialpos": firstIndex,
+        "probepos": secondIndex,
+        "study_1": pairs,
+        "study_2": matchedPairs,
+        "list": cardPairs,
+        "errors": errors,
+        "score": score,
+        "max_score": 500,
+        "difficulty": difficulty,
+        "experiment": "PAIR_GAME",
+        "session": sessionNumber,
+        "subject": userId,
+      };
+
+      Constant.saveTestResult(
+          "Parejas de Cartas", score, duration, rawData, difficulty);
+      TestResult.saveGlobalStats(score, difficulty, errors, duration);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              "🏆 ¡Juego completado! Puntuación: ${score.toStringAsFixed(2)} / 500"),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      print("✅ Resultado de Parejas de Cartas guardado correctamente.");
+    } catch (e) {
+      print("❌ Error al guardar el resultado: $e");
+    }
+  }
+
+  void _onCardTap(int index) {
+    if (selectedIndexes.length == 2) return;
+
+    setState(() {
+      cards[index]["revealed"] = true;
+      selectedIndexes.add(index);
+
+      if (selectedIndexes.length == 2) {
+        attempts++;
         final firstIndex = selectedIndexes[0];
         final secondIndex = selectedIndexes[1];
 
-        if (cards[firstIndex]["icon"] == cards[secondIndex]["icon"]) {
-          // Marca como emparejadas
-          cards[firstIndex]["matched"] = true;
-          cards[secondIndex]["matched"] = true;
-        } else {
-          // Oculta las cartas si no coinciden
-          cards[firstIndex]["revealed"] = false;
-          cards[secondIndex]["revealed"] = false;
-        }
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (cards[firstIndex]["icon"] == cards[secondIndex]["icon"]) {
+            cards[firstIndex]["matched"] = true;
+            cards[secondIndex]["matched"] = true;
+            matchedPairs++;
+            final duration = DateTime.now().difference(startTime!);
+            savePairResult(cardPairs, attempts, duration, cardPairs, firstIndex,
+                secondIndex);
+          } else {
+            cards[firstIndex]["revealed"] = false;
+            cards[secondIndex]["revealed"] = false;
+            errors++;
+          }
 
-        selectedIndexes.clear();
-        setState(() {});
-      });
-    }
-  });
-}
-
+          selectedIndexes.clear();
+          setState(() {});
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,8 +234,7 @@ class _CardPairsGameState extends State<CardPairsGame> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (!gameStarted && !showInfo)
-                  StartButton(onStart: startGame),
+                if (!gameStarted && !showInfo) StartButton(onStart: startGame),
                 if (!gameStarted && !showInfo)
                   DifficultySlider(
                     sequenceLength: cardPairs,
@@ -133,7 +249,7 @@ class _CardPairsGameState extends State<CardPairsGame> {
                   const CardInfoCard(
                     title: "Cómo Jugar",
                     content:
-                        "Encuentra todas las parejas de cartas lo más rápido posible. Cuanto más difícil, más puntos puedes ganar.",
+                        "Encuentra todas las parejas lo más rápido posible. Cuanto más difícil, más puntos puedes ganar.",
                   ),
                 if (gameStarted)
                   CardGrid(
@@ -143,23 +259,6 @@ class _CardPairsGameState extends State<CardPairsGame> {
               ],
             ),
           ),
-          if (!gameStarted)
-            Positioned(
-              bottom: 20,
-              right: 20,
-              child: IconButton(
-                icon: Icon(
-                  showInfo ? Icons.close : Icons.info_outline,
-                  size: 30,
-                  color: const Color.fromARGB(255, 80, 39, 176),
-                ),
-                onPressed: () {
-                  setState(() {
-                    showInfo = !showInfo;
-                  });
-                },
-              ),
-            ),
         ],
       ),
     );
