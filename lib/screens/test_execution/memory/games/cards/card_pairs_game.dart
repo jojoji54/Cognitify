@@ -31,7 +31,7 @@ class _CardPairsGameState extends State<CardPairsGame> {
   int gameTime = 0;
   int sessionNumber = 1;
   String userId = "R1002P";
-  double? finalScore;
+  double totalScore = 0.0; // 🔄 Acumula el puntaje total
 
   @override
   void initState() {
@@ -101,32 +101,41 @@ class _CardPairsGameState extends State<CardPairsGame> {
       int difficulty, int errors, int matchedPairs) {
     print("🔍 Calculando puntuación para el juego de parejas...");
 
-    // Puntuación base
+    // 🔢 Puntuación base
     double baseScore = 100.0 + (pairs - 5) * 20.0;
 
-    // Penalización por intentos
+    // 📝 Penalización por intentos
     int maxAttempts = pairs * 2;
     double attemptPenalty = (attempts - pairs) * 2.0;
     attemptPenalty = attemptPenalty.clamp(0, 100);
+    print("📝 Penalización por Intentos: $attemptPenalty");
 
-    // Penalización por tiempo
-    int maxTime = difficulty * 15;
-    double timePenalty = (duration.inSeconds / maxTime) * 100.0;
+    // ⏱️ Penalización por tiempo (balanceada)
+    int maxTime =
+        pairs * 3 * difficulty; // Ajustado para dificultad y cantidad de pares
+    double timePenalty = (duration.inMilliseconds / maxTime) * 100.0;
     timePenalty = timePenalty.clamp(0, 100);
+    print("⏱️ Penalización por Tiempo: $timePenalty");
 
-    // Bonificación por velocidad
-    double speedBonus = (pairs * 20) - (duration.inSeconds / (pairs * 2)) * 100;
-    speedBonus = speedBonus.clamp(0, 100);
+    // 🚀 Bonificación por velocidad (más precisa)
+    double expectedTimePerPair =
+        (maxTime / pairs) / 2; // Tiempo esperado por par
+    double speedBonus =
+        (expectedTimePerPair - (duration.inMilliseconds / pairs)) * 2;
+    speedBonus = speedBonus.clamp(0, 50);
+    print("🚀 Bonificación por Velocidad: $speedBonus");
 
-    // Penalización por errores
+    // ❌ Penalización por errores (ajustada)
     double errorPenalty = errors * 5.0;
     errorPenalty = errorPenalty.clamp(0, 100);
+    print("❌ Penalización por Errores: $errorPenalty");
 
-    // Bonificación por dificultad
-    double difficultyBonus = difficulty * 5.0;
+    // 💥 Bonificación por dificultad (ajustada)
+    double difficultyBonus = difficulty * 10.0;
     difficultyBonus = difficultyBonus.clamp(0, 100);
+    print("💥 Bonificación por Dificultad: $difficultyBonus");
 
-    // Puntuación final (máximo 500 puntos)
+    // 🏁 Puntuación final (máximo 500 puntos)
     double finalScore = baseScore -
         attemptPenalty -
         timePenalty -
@@ -136,30 +145,37 @@ class _CardPairsGameState extends State<CardPairsGame> {
     finalScore = finalScore.clamp(0, 500);
 
     print("🏁 Puntuación Final: $finalScore");
-    this.finalScore = finalScore;
+    finalScore = finalScore;
     return finalScore;
   }
 
   void savePairResult(int pairs, int attempts, Duration duration,
-      int difficulty, int firstIndex, int secondIndex) {
+      int difficulty, int firstIndex, int secondIndex, bool matched) {
     try {
       final score = calculatePairScore(
           pairs, attempts, duration, difficulty, errors, matchedPairs);
 
-      final onset = startTime?.millisecondsSinceEpoch ??
-          DateTime.now().millisecondsSinceEpoch;
+      // 🔄 Acumula el puntaje total
+      totalScore += score;
 
+      // Datos sin procesar para Hive
       final rawData = {
-        "onset": onset,
+        "onset": startTime != null
+            ? DateTime.now().millisecondsSinceEpoch -
+                startTime!.millisecondsSinceEpoch
+            : 0,
         "duration": duration.inMilliseconds,
         "sample": attempts,
-        "trial_type": "PAIR",
+        "trial_type": matched ? "PAIR" : "PROB",
         "response_time": duration.inMilliseconds,
         "serialpos": firstIndex,
         "probepos": secondIndex,
+        "probe_word": cards[firstIndex]["icon"].toString(),
+        "resp_word": cards[secondIndex]["icon"].toString(),
+        "stim_file": "icon_${cards[firstIndex]["icon"].toString()}",
         "study_1": pairs,
         "study_2": matchedPairs,
-        "list": cardPairs,
+        "list": sessionNumber,
         "errors": errors,
         "score": score,
         "max_score": 500,
@@ -167,21 +183,30 @@ class _CardPairsGameState extends State<CardPairsGame> {
         "experiment": "PAIR_GAME",
         "session": sessionNumber,
         "subject": userId,
+        "answer": matched ? 1 : -1,
       };
 
       Constant.saveTestResult(
           "Parejas de Cartas", score, duration, rawData, difficulty);
       TestResult.saveGlobalStats(score, difficulty, errors, duration);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              "🏆 ¡Juego completado! Puntuación: ${score.toStringAsFixed(2)} / 500"),
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.green,
-        ),
-      );
+      // 🔔 Muestra el mensaje solo si se han encontrado todos los pares
+      if (matchedPairs == pairs) {
+        stopGame();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "🏆 ¡Juego completado!\nPuntuación Total: ${totalScore.toStringAsFixed(2)} / ${pairs * 500}",
+            ),
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // 🔄 Reinicia el puntaje total para la próxima partida
+        totalScore = 0.0;
+      }
 
       print("✅ Resultado de Parejas de Cartas guardado correctamente.");
     } catch (e) {
@@ -190,32 +215,52 @@ class _CardPairsGameState extends State<CardPairsGame> {
   }
 
   void _onCardTap(int index) {
-    if (selectedIndexes.length == 2) return;
+    // Ignora si ya hay dos cartas seleccionadas
+    if (selectedIndexes.length == 2 || cards[index]["matched"]) return;
 
     setState(() {
+      // Revela la carta seleccionada
       cards[index]["revealed"] = true;
       selectedIndexes.add(index);
 
+      // Verifica si se han seleccionado dos cartas
       if (selectedIndexes.length == 2) {
         attempts++;
         final firstIndex = selectedIndexes[0];
         final secondIndex = selectedIndexes[1];
 
         Future.delayed(const Duration(milliseconds: 500), () {
-          if (cards[firstIndex]["icon"] == cards[secondIndex]["icon"]) {
+          final isMatch =
+              cards[firstIndex]["icon"] == cards[secondIndex]["icon"];
+
+          if (isMatch) {
+            // Marca las cartas como emparejadas
             cards[firstIndex]["matched"] = true;
             cards[secondIndex]["matched"] = true;
             matchedPairs++;
-            final duration = DateTime.now().difference(startTime!);
-            savePairResult(cardPairs, attempts, duration, cardPairs, firstIndex,
-                secondIndex);
           } else {
+            // Oculta las cartas si no coinciden
             cards[firstIndex]["revealed"] = false;
             cards[secondIndex]["revealed"] = false;
             errors++;
           }
 
+          // Guarda el resultado del intento
+          final duration = DateTime.now().difference(startTime!);
+          savePairResult(
+            cardPairs,
+            attempts,
+            duration,
+            cardPairs,
+            firstIndex,
+            secondIndex,
+            isMatch,
+          );
+
+          // Reinicia el estado de las cartas seleccionadas
           selectedIndexes.clear();
+
+          // Refresca el estado del widget
           setState(() {});
         });
       }

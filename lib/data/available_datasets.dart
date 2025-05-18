@@ -70,7 +70,7 @@ final List<DatasetInfo> availableDatasets = [
   DatasetInfo(
     name: "sub-R1001P - ses0",
     url:
-        "https://raw.githubusercontent.com/juanormaechea97/csv/refs/heads/main/cognify/parejas/sub-R1001P_ses-0_task-PAL1_beh.csv?download=1",
+        "https://raw.githubusercontent.com/juanormaechea97/csv/refs/heads/main/cognify/parejas/sub-R1001P_ses-0_task-PAL1_beh.csv",
     type: "Memoria",
     subtype: "Parejas de Cartas",
     dateAdded: DateTime(2023, 4, 23),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cognitify/data/available_datasets.dart';
 import 'package:cognitify/models/dataset_info.dart';
 import 'package:cognitify/services/preferences_service.dart';
@@ -21,7 +23,7 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
   void initState() {
     super.initState();
     datasetBox = Hive.box<DatasetInfo>('datasets');
-     // Filtra los datasets por subtype
+    // Filtra los datasets por subtype
     filteredDatasets = availableDatasets.where((b) {
       return b.subtype == widget.gameName;
     }).toList();
@@ -43,9 +45,8 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
 
         // Crear o actualizar el dataset en Hive
         final datasetBox = Hive.box<DatasetInfo>('datasets');
-        final existingIndex = datasetBox.values
-            .toList()
-            .indexWhere((d) => d.name == dataset.name && d.subtype == widget.gameName);
+        final existingIndex = datasetBox.values.toList().indexWhere(
+            (d) => d.name == dataset.name && d.subtype == widget.gameName);
 
         if (existingIndex != -1) {
           // Actualiza el dataset existente
@@ -78,20 +79,44 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
       } else {
         _showSnackbar(
             context, "❌ Error descargando el dataset: ${response.statusCode}");
+        print("❌ Error descargando el dataset: ${response.statusCode}");
       }
     } catch (e) {
       _showSnackbar(context, "❌ Error descargando el dataset: $e");
+      print("❌ Error descargando el dataset: $e");
     }
   }
 
   List<Map<String, dynamic>> _parseCSV(String csvContent) {
-    final lines = csvContent.split('\n');
+    final lines = const LineSplitter().convert(csvContent);
     final headers = lines.first.split(',').map((h) => h.trim()).toList();
 
-    return lines.skip(1).where((line) => line.trim().isNotEmpty).map((line) {
-      final values = line.split(',').map((v) => v.trim()).toList();
+    return lines.skip(1).where((line) {
+      final values = _parseLineWithQuotes(line);
+
+      // Verifica si el número de columnas coincide
+      if (values.length != headers.length) {
+        print("❌ Inconsistent row: $values");
+        print("🔗 Headers: ${headers.length}, Values: ${values.length}");
+      }
+
+      return values.length == headers.length;
+    }).map((line) {
+      final values = _parseLineWithQuotes(line);
       return Map<String, dynamic>.fromIterables(headers, values);
     }).toList();
+  }
+
+  List<String> _parseLineWithQuotes(String line) {
+    final RegExp csvRegExp = RegExp(
+      r'(".*?"|[^,]+)(?=\s*,|\s*$)',
+      multiLine: true,
+    );
+
+    return csvRegExp
+        .allMatches(line)
+        .map((match) => match.group(0)!.replaceAll('"', '').trim())
+        .toList();
   }
 
   void _showSnackbar(BuildContext context, String message) {
