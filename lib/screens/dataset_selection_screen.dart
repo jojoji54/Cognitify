@@ -62,6 +62,7 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
             name: dataset.name,
             url: dataset.url,
             type: dataset.type,
+            subtype: "Secuencia",
             dateAdded: dataset.dateAdded,
             lastUpdated: DateTime.now(),
             jsonData: jsonData,
@@ -153,13 +154,14 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
                   name: dataset.name,
                   url: dataset.url,
                   type: dataset.type,
+                  subtype: "",
                   dateAdded: dataset.dateAdded,
                   lastUpdated: dataset.lastUpdated,
                 ),
               );
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.only(bottom: 20,left: 15,right: 15),
                 child: NeumorphicButton(
                   onPressed: () => downloadDataset(context, dataset),
                   style: NeumorphicStyle(

@@ -15,18 +15,23 @@ class DatasetInfo extends HiveObject {
   String type;
 
   @HiveField(3)
-  DateTime dateAdded;
+  String subtype;
 
   @HiveField(4)
-  DateTime? lastUpdated;
+  DateTime dateAdded;
 
   @HiveField(5)
-  List<Map<String, dynamic>>? jsonData; // Aquí se guarda el CSV convertido a JSON
+  DateTime? lastUpdated;
+
+  @HiveField(6)
+  List<Map<String, dynamic>>?
+      jsonData; // Aquí se guarda el CSV convertido a JSON
 
   DatasetInfo({
     required this.name,
     required this.url,
     required this.type,
+    required this.subtype,
     required this.dateAdded,
     this.lastUpdated,
     this.jsonData,

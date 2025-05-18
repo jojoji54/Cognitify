@@ -116,6 +116,14 @@ class _TestSelectionScreenState extends State<TestSelectionScreen> {
                                 alignment: Alignment.centerRight,
                                 child: NeumorphicButton(
                                   onPressed: () async {
+                                    /* final box = await Hive.openBox<DatasetInfo>(
+                                        'datasetsBox');
+
+                                    // Obtener solo datasets de secuencia
+                                    final secuenciaDatasets = box.values
+                                        .where((dataset) =>
+                                            dataset.subtype == "Secuencia")
+                                        .toList(); */
                                     HapticFeedback.lightImpact();
                                     final hasDataset = await PreferencesService
                                         .isDatasetSelected(selectedTest!);

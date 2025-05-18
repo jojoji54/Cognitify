@@ -75,6 +75,7 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
         name: "Sin datos",
         url: "",
         type: "Memoria",
+        subtype: "",
         dateAdded: DateTime.now(),
         jsonData: [],
       ),
@@ -597,8 +598,8 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
                     builder: (context) {
                       return AlertDialog(
                         title: const Text("📊 Información del Gráfico"),
-                       content: const Text(
-  """
+                        content: const Text(
+                          """
 📅 Fecha:
 La fecha en que se registró el resultado.
 
@@ -621,8 +622,7 @@ El número de errores cometidos en esta sesión.
 - En verde se muestran los resultados con 100% de precisión.
 - En rojo se muestran los resultados con más de 3 errores o 0% de precisión.
 """,
-),
-
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () {
