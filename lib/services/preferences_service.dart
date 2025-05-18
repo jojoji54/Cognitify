@@ -29,10 +29,10 @@ class PreferencesService {
 
 // Obtener la clave correcta para cada tipo de dataset
   static String _getDatasetKey(String datasetType) {
-    switch (datasetType.toLowerCase()) {
-      case "Secuencia de numeros":
+    switch (datasetType) {
+      case "Secuencia de Números":
         return _secuenceofnumbersmemoryDatasetSelectedKey;
-      case "Pareja de cartas":
+      case "Parejas de Cartas":
         return _cardpairsDatasetSelectedKey;
       case "atención":
         return _attentionDatasetSelectedKey;

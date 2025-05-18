@@ -45,7 +45,7 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
         final datasetBox = Hive.box<DatasetInfo>('datasets');
         final existingIndex = datasetBox.values
             .toList()
-            .indexWhere((d) => d.name == dataset.name);
+            .indexWhere((d) => d.name == dataset.name && d.subtype == widget.gameName);
 
         if (existingIndex != -1) {
           // Actualiza el dataset existente
@@ -69,6 +69,8 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
 
         // ✅ Mostrar éxito
         _showSnackbar(context, "✅ '${dataset.name}' descargado correctamente.");
+        // Marcar como seleccionado
+        await PreferencesService.setDatasetSelected(dataset.subtype, true);
         print("📊 Total Entradas: ${jsonData.length}");
 
         // 🔄 Cierra la pantalla actual
