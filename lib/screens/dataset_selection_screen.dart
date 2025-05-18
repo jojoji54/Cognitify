@@ -6,36 +6,32 @@ import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
 
 class DatasetSelectionScreen extends StatefulWidget {
+  String gameName;
+  DatasetSelectionScreen({Key? key, required this.gameName}) : super(key: key);
+
   @override
   State<DatasetSelectionScreen> createState() => _DatasetSelectionScreenState();
 }
 
 class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
   late Box<DatasetInfo> datasetBox;
+  late List<DatasetInfo> filteredDatasets;
 
   @override
   void initState() {
     super.initState();
-    loadDatasets();
-  }
-
-  void loadDatasets() {
-    // La caja ya está abierta en main.dart
     datasetBox = Hive.box<DatasetInfo>('datasets');
-    
-    setState(() {});
+     // Filtra los datasets por subtype
+    filteredDatasets = availableDatasets.where((b) {
+      return b.subtype == widget.gameName;
+    }).toList();
   }
 
   Future<void> downloadDataset(
       BuildContext context, DatasetInfo dataset) async {
     try {
-      // Mostrar mensaje de inicio
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("📥 Descargando dataset..."),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      // 🔄 Mostrar mensaje de inicio
+      _showSnackbar(context, "📥 Descargando dataset...");
 
       // Descargar el contenido del CSV
       final response = await http.get(Uri.parse(dataset.url));
@@ -63,7 +59,7 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
             name: dataset.name,
             url: dataset.url,
             type: dataset.type,
-            subtype: "Secuencia",
+            subtype: widget.gameName,
             dateAdded: dataset.dateAdded,
             lastUpdated: DateTime.now(),
             jsonData: jsonData,
@@ -71,54 +67,38 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
           datasetBox.add(newDataset);
         }
 
-        // Marcar como seleccionado
-        await PreferencesService.setDatasetSelected(dataset.type, true);
-
-        // ✅ Imprime el contenido del JSON para verificar
-        print(
-            "✅ Dataset '${dataset.name}' descargado y guardado correctamente.");
-        print("📊 JSON Data: ${jsonData.take(3).toList()}...");
+        // ✅ Mostrar éxito
+        _showSnackbar(context, "✅ '${dataset.name}' descargado correctamente.");
         print("📊 Total Entradas: ${jsonData.length}");
 
-        // Mostrar éxito y cerrar la ventana
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("✅ '${dataset.name}' descargado correctamente."),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-
-        // Cierra la ventana actual
+        // 🔄 Cierra la pantalla actual
         Navigator.pop(context);
       } else {
-        // Error al descargar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text("❌ Error descargando el dataset: ${response.statusCode}"),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        _showSnackbar(
+            context, "❌ Error descargando el dataset: ${response.statusCode}");
       }
     } catch (e) {
-      // Error general
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("❌ Error descargando el dataset: $e"),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      _showSnackbar(context, "❌ Error descargando el dataset: $e");
     }
   }
 
   List<Map<String, dynamic>> _parseCSV(String csvContent) {
     final lines = csvContent.split('\n');
-    final headers = lines.first.split(',');
+    final headers = lines.first.split(',').map((h) => h.trim()).toList();
 
-    return lines.skip(1).where((line) => line.isNotEmpty).map((line) {
-      final values = line.split(',');
+    return lines.skip(1).where((line) => line.trim().isNotEmpty).map((line) {
+      final values = line.split(',').map((v) => v.trim()).toList();
       return Map<String, dynamic>.fromIterables(headers, values);
     }).toList();
+  }
+
+  void _showSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   String formatDate(DateTime date) {
@@ -148,21 +128,21 @@ class _DatasetSelectionScreenState extends State<DatasetSelectionScreen> {
         padding: const EdgeInsets.all(20.0),
         child: SingleChildScrollView(
           child: Column(
-            children: availableDatasets.map((dataset) {
+            children: filteredDatasets.map((dataset) {
               final existingDataset = datasetBox.values.firstWhere(
-                (d) => d.name == dataset.name,
+                (d) => d.name == dataset.name && d.subtype == widget.gameName,
                 orElse: () => DatasetInfo(
                   name: dataset.name,
                   url: dataset.url,
                   type: dataset.type,
-                  subtype: "",
+                  subtype: widget.gameName,
                   dateAdded: dataset.dateAdded,
                   lastUpdated: dataset.lastUpdated,
                 ),
               );
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 20,left: 15,right: 15),
+                padding: const EdgeInsets.only(bottom: 20, left: 15, right: 15),
                 child: NeumorphicButton(
                   onPressed: () => downloadDataset(context, dataset),
                   style: NeumorphicStyle(

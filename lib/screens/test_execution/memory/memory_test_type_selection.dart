@@ -27,7 +27,7 @@ class _MemoryTestTypeSelectionState extends State<MemoryTestTypeSelection> {
       context,
       MaterialPageRoute(
         builder: (context) =>
-            hasDataset ? testWidget : DatasetSelectionScreen(),
+            hasDataset ? testWidget : DatasetSelectionScreen(gameName: selectedTest!),
       ),
     );
   }
