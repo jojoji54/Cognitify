@@ -2,7 +2,6 @@ import 'package:cognitify/models/user_profile.dart';
 import 'package:cognitify/models/test_result.dart';
 import 'package:cognitify/models/dataset_info.dart';
 import 'package:cognitify/screens/home/result/memory/games/widget/neumorphic_analysis_tile.dart';
-import 'package:cognitify/utils/test_constants.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:hive/hive.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -28,6 +27,7 @@ class _CardPairsResultsState extends State<CardPairsResults> {
   String analysisResult = "";
   String dataSetName = "";
   String dataSetUrl = "";
+   DatasetInfo? dataset; 
 
   @override
   void initState() {
@@ -51,7 +51,7 @@ class _CardPairsResultsState extends State<CardPairsResults> {
     String userId = userProfile?.name ?? "R1001P";
 
     // Cargar datos del dataset por tipo (Memoria - Parejas de Cartas)
-    final dataset = datasetBox.values.firstWhere(
+     dataset = datasetBox.values.firstWhere(
       (d) =>
           d.subtype == "Parejas de Cartas" ,
       orElse: () => DatasetInfo(
@@ -63,11 +63,11 @@ class _CardPairsResultsState extends State<CardPairsResults> {
         jsonData: [],
       ),
     );
-    dataSetName = dataset.name;
-    dataSetUrl = dataset.url;
+    dataSetName = dataset!.name;
+    dataSetUrl = dataset!.url;
 
     // Filtrar datos del dataset para el usuario actual
-    datasetScores = dataset.jsonData!
+    datasetScores = dataset!.jsonData!
         .where((entry) => entry["answer"] != null)
         .map((entry) => double.tryParse(entry["answer"].toString()) ?? 0.0)
         .toList();
@@ -196,11 +196,21 @@ class _CardPairsResultsState extends State<CardPairsResults> {
   }
 
   Widget _buildSummaryCard() {
-    final cleanedDatasetScores = datasetScores.where((score) => score != -999.0).toList();
+   // Filtra solo los valores que son respuestas válidas
+final datasetAnswers = dataset!.jsonData!
+    .map((entry) => int.tryParse(entry["answer"].toString()) ?? -999)
+    .where((answer) => answer != -999)
+    .toList();
 
-final datasetAverage = cleanedDatasetScores.isNotEmpty
-    ? cleanedDatasetScores.reduce((a, b) => a + b) / cleanedDatasetScores.length
+print("📊 Respuestas del Dataset (filtradas): $datasetAnswers");
+
+// Calcula el promedio si hay datos válidos
+final datasetAverage = datasetAnswers.isNotEmpty
+    ? datasetAnswers.reduce((a, b) => a + b) / datasetAnswers.length
     : 0.0;
+
+print("📊 Promedio del Dataset (filtrado): $datasetAverage");
+
 
     // Calcula la puntuación total del usuario
     final totalUserScore =
