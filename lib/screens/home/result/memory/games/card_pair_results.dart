@@ -71,10 +71,9 @@ class _CardPairsResultsState extends State<CardPairsResults> {
 
     // Filtrar datos del dataset para el usuario actual
     datasetScores = dataset.jsonData!
-    .where((entry) => entry["answer"] != null)
-    .map((entry) => double.tryParse(entry["answer"].toString()) ?? 0.0)
-    .toList();
-
+        .where((entry) => entry["answer"] != null)
+        .map((entry) => double.tryParse(entry["answer"].toString()) ?? 0.0)
+        .toList();
 
     // Calcula las estadísticas del usuario
     final userScores = results.expand((r) => r.scores).toList();
@@ -94,24 +93,21 @@ class _CardPairsResultsState extends State<CardPairsResults> {
     // Precisión total del usuario
     final totalCorrect = userScores.where((s) => s > 0).length;
 // Total de intentos (incluyendo correctos e incorrectos)
-final totalAttempts = results
-    .expand((r) => r.rawData)
-    .where((data) => data["trial_type"] == "PAIR")
-    .length;
+    final totalAttempts = results
+        .expand((r) => r.rawData)
+        .where((data) => data["trial_type"] == "PAIR")
+        .length;
 
 // Total de errores
-_totalErrors = results
-    .expand((r) => r.rawData)
-    .where((data) => data["answer"] == -1)  // Solo cuenta los errores
-    .length;
-
+    _totalErrors = results
+        .expand((r) => r.rawData)
+        .where((data) => data["answer"] == -1) // Solo cuenta los errores
+        .length;
 
 // Calcula la precisión correctamente
-_accuracy = totalAttempts > 0
-    ? ((totalAttempts - _totalErrors) / totalAttempts) * 100
-    : 0.0;
-
-
+    _accuracy = totalAttempts > 0
+        ? ((totalAttempts - _totalErrors) / totalAttempts) * 100
+        : 0.0;
 
     // Calcular percentil
     int totalPoints = 0;
@@ -187,9 +183,40 @@ _accuracy = totalAttempts > 0
   }
 
   Widget _buildSummaryCard() {
-   final datasetAverage = datasetScores.isNotEmpty
-    ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
-    : 0.0;
+    final datasetAverage = datasetScores.isNotEmpty
+        ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
+        : 0.0;
+
+    // Calcula la puntuación total del usuario
+    final totalUserScore =
+        results.expand((r) => r.scores).fold(0.0, (sum, score) => sum + score);
+
+    // Calcula el máximo de parejas consecutivas sin error
+    int maxConsecutivePairs = 0;
+    int currentStreak = 0;
+    for (var result in results) {
+      for (var data in result.rawData) {
+        final errors = int.tryParse(data["errors"].toString()) ?? 0;
+        if (errors == 0) {
+          currentStreak++;
+          if (currentStreak > maxConsecutivePairs) {
+            maxConsecutivePairs = currentStreak;
+          }
+        } else {
+          currentStreak = 0;
+        }
+      }
+    }
+
+    // Encuentra el mejor tiempo para completar una partida
+    final bestTime = results
+        .expand((r) => r.durations)
+        .fold<Duration>(const Duration(hours: 999), (best, current) {
+      return current < best ? current : best;
+    });
+
+    // Calcula el número total de partidas jugadas
+    final totalGamesPlayed = results.length;
 
     return Neumorphic(
       style: NeumorphicStyle(
@@ -211,38 +238,72 @@ _accuracy = totalAttempts > 0
           ),
           const SizedBox(height: 20),
           Text(
-            "Puntuación Promedio (Usuario): ${_averageScore.toStringAsFixed(2)}",
+            "* Puntuación Promedio (Usuario): ${_averageScore.toStringAsFixed(2)}",
             style: const TextStyle(
               fontSize: 18,
               color: Color.fromARGB(255, 80, 80, 80),
             ),
           ),
           Text(
-            "Puntuación Promedio (Dataset): ${datasetAverage.toStringAsFixed(2)}",
+            "* Puntuación Promedio (Dataset): ${datasetAverage.toStringAsFixed(2)}",
             style: const TextStyle(
               fontSize: 18,
               color: Color.fromARGB(255, 120, 120, 120),
             ),
           ),
           Text(
-            "Tiempo de Respuesta Promedio: ${_averageResponseTime.toStringAsFixed(2)}s",
+            "* Tiempo de Respuesta Promedio: ${_averageResponseTime.toStringAsFixed(2)}s",
             style: const TextStyle(
               fontSize: 18,
               color: Color.fromARGB(255, 80, 80, 80),
             ),
           ),
           Text(
-            "Precisión Total: ${_accuracy.toStringAsFixed(2)}%",
+            "* Precisión Total: ${_accuracy.toStringAsFixed(2)}%",
             style: const TextStyle(
               fontSize: 18,
               color: Color.fromARGB(255, 80, 80, 80),
             ),
           ),
           Text(
-            "Total de Errores: $_totalErrors",
+            "* Total de Errores: $_totalErrors",
             style: const TextStyle(
               fontSize: 18,
               color: Color.fromARGB(255, 80, 80, 80),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Divider(
+            thickness: 1,
+            color: Colors.grey.withOpacity(0.5),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            "* Puntuación Total (Usuario): ${totalUserScore.toStringAsFixed(2)}",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 80, 39, 176),
+            ),
+          ),
+          Text(
+            "* Máxima Racha sin Error: $maxConsecutivePairs",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 80, 39, 176),
+            ),
+          ),
+          Text(
+            "* Mejor Tiempo: ${bestTime.inSeconds}s",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 80, 39, 176),
+            ),
+          ),
+          Text(
+            "* Total de Partidas Jugadas: $totalGamesPlayed",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 80, 39, 176),
             ),
           ),
         ],
