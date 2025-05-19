@@ -1,4 +1,5 @@
 // lib/screens/results/memory_results_screen.dart
+import 'package:cognitify/screens/home/result/memory/games/card_pair_results.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter/material.dart';
 import 'package:page_view_dot_indicator/page_view_dot_indicator.dart';
@@ -52,7 +53,7 @@ class _MemoryResultsScreenState extends State<MemoryResultsScreen> {
               },
               children: const [
                 MemorySequenceResults(),
-                Center(child: Text("🃏 Resultados de Parejas de Cartas")),
+                CardPairsResults(),
                 Center(child: Text("🗺️ Resultados de Memoria Espacial")),
               ],
             ),
