@@ -71,9 +71,10 @@ class _CardPairsResultsState extends State<CardPairsResults> {
 
     // Filtrar datos del dataset para el usuario actual
     datasetScores = dataset.jsonData!
-        .where((entry) => entry["subject"] == userId)
-        .map((entry) => double.tryParse(entry["score"].toString()) ?? 0.0)
-        .toList();
+    .where((entry) => entry["answer"] != null)
+    .map((entry) => double.tryParse(entry["answer"].toString()) ?? 0.0)
+    .toList();
+
 
     // Calcula las estadísticas del usuario
     final userScores = results.expand((r) => r.scores).toList();
