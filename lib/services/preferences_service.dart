@@ -44,10 +44,11 @@ class PreferencesService {
   }
 
   // Marcar todos los datasets como no seleccionados (para debugging o reset)
-  /* static Future<void> resetAllDatasets() async {
+   static Future<void> resetAllDatasets() async {
     final prefs = await getPrefs();
-    await prefs.remove(_memoryDatasetSelectedKey);
+    await prefs.remove(_secuenceofnumbersmemoryDatasetSelectedKey);
+    await prefs.remove(_cardpairsDatasetSelectedKey);
     await prefs.remove(_attentionDatasetSelectedKey);
     await prefs.remove(_reasoningDatasetSelectedKey);
-  } */
+  } 
 }

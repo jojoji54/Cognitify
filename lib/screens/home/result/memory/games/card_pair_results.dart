@@ -53,10 +53,7 @@ class _CardPairsResultsState extends State<CardPairsResults> {
     // Cargar datos del dataset por tipo (Memoria - Parejas de Cartas)
     final dataset = datasetBox.values.firstWhere(
       (d) =>
-          d.type == "Memoria" &&
-          d.subtype == "Pareja de cartas" &&
-          d.jsonData != null &&
-          d.jsonData!.isNotEmpty,
+          d.subtype == "Parejas de Cartas" ,
       orElse: () => DatasetInfo(
         name: "Sin datos",
         url: "",
@@ -199,9 +196,11 @@ class _CardPairsResultsState extends State<CardPairsResults> {
   }
 
   Widget _buildSummaryCard() {
-    final datasetAverage = datasetScores.isNotEmpty
-        ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
-        : 0.0;
+    final cleanedDatasetScores = datasetScores.where((score) => score != -999.0).toList();
+
+final datasetAverage = cleanedDatasetScores.isNotEmpty
+    ? cleanedDatasetScores.reduce((a, b) => a + b) / cleanedDatasetScores.length
+    : 0.0;
 
     // Calcula la puntuación total del usuario
     final totalUserScore =
