@@ -182,6 +182,22 @@ class _CardPairsResultsState extends State<CardPairsResults> {
     );
   }
 
+  // Calcula el percentil del usuario
+  double calculateUserPercentile(
+      List<double> userScores, List<double> datasetScores) {
+    if (userScores.isEmpty || datasetScores.isEmpty) return 0.0;
+
+    // Junta todos los puntajes (usuario y dataset)
+    final allScores = [...datasetScores, ...userScores]..sort();
+
+    // Encuentra la posición del puntaje promedio del usuario en el conjunto total
+    final userAverage = userScores.reduce((a, b) => a + b) / userScores.length;
+    final position = allScores.indexWhere((score) => score >= userAverage);
+
+    // Calcula el percentil
+    return (position / allScores.length) * 100;
+  }
+
   Widget _buildSummaryCard() {
     final datasetAverage = datasetScores.isNotEmpty
         ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
@@ -217,6 +233,8 @@ class _CardPairsResultsState extends State<CardPairsResults> {
 
     // Calcula el número total de partidas jugadas
     final totalGamesPlayed = results.length;
+    // Cargar todos los resultados del usuario desde Hive
+    final userScores = results.expand((r) => r.scores).toList();
 
     return Neumorphic(
       style: NeumorphicStyle(
@@ -301,6 +319,13 @@ class _CardPairsResultsState extends State<CardPairsResults> {
           ),
           Text(
             "* Total de Partidas Jugadas: $totalGamesPlayed",
+            style: const TextStyle(
+              fontSize: 18,
+              color: Color.fromARGB(255, 80, 39, 176),
+            ),
+          ),
+          Text(
+            "* Percentil del Usuario: ${calculateUserPercentile(userScores, datasetScores).toStringAsFixed(2)}%",
             style: const TextStyle(
               fontSize: 18,
               color: Color.fromARGB(255, 80, 39, 176),
