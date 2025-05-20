@@ -402,15 +402,8 @@ class _CardPairsResultsState extends State<CardPairsResults> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
-            "📈 Comparación Radar",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 47, 47, 47),
-            ),
-          ),
-          const SizedBox(height: 20),
+         
+       
           SizedBox(
             height: 300,
             child: radar.RadarChart.light(
@@ -477,14 +470,7 @@ class _CardPairsResultsState extends State<CardPairsResults> {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          const Text(
-            "📊 Rendimiento",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 47, 47, 47),
-            ),
-          ),
+         
           const SizedBox(height: 20),
           SizedBox(
             height: 300,
