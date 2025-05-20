@@ -165,7 +165,7 @@ class _MemorySequenceResultsState extends State<MemorySequenceResults> {
     });
 
     try {
-      Constant.prompt = Constant.generatePrompt(
+      Constant.prompt = Constant.generatePromptSecuenceMemory(
           _averageScore,
           _averageResponseTime,
           _accuracy,

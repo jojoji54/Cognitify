@@ -2,6 +2,8 @@ import 'package:cognitify/models/user_profile.dart';
 import 'package:cognitify/models/test_result.dart';
 import 'package:cognitify/models/dataset_info.dart';
 import 'package:cognitify/screens/home/result/memory/games/widget/neumorphic_analysis_tile.dart';
+import 'package:cognitify/services/ai/secuence_of_number_ai.dart';
+import 'package:cognitify/utils/test_constants.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:hive/hive.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -167,11 +169,7 @@ class _CardPairsResultsState extends State<CardPairsResults> {
               NeumorphicAnalysisTile(
                 isLoading: isLoadingAnalysis,
                 analysisResult: analysisResult,
-                onAnalyze: () {
-                  setState(() {
-                    analysisResult = "🧠 Análisis en progreso...";
-                  });
-                },
+                 onAnalyze: _analyzeResults,
               ),
               const SizedBox(height: 20),
             ],
@@ -815,4 +813,67 @@ Esta tabla te permite seguir la evolución de tu rendimiento y detectar posibles
       ),
     );
   }
+
+  void _analyzeResults() async {
+  setState(() {
+    isLoadingAnalysis = true;
+    analysisResult = "";
+  });
+
+  try {
+    final totalUserScore =
+        results.expand((r) => r.scores).fold(0.0, (sum, score) => sum + score);
+
+    int maxConsecutivePairs = 0;
+    int currentStreak = 0;
+    for (var result in results) {
+      for (var data in result.rawData) {
+        final errors = int.tryParse(data["errors"].toString()) ?? 0;
+        if (errors == 0) {
+          currentStreak++;
+          if (currentStreak > maxConsecutivePairs) {
+            maxConsecutivePairs = currentStreak;
+          }
+        } else {
+          currentStreak = 0;
+        }
+      }
+    }
+
+    final bestTime = results
+        .expand((r) => r.durations)
+        .fold<Duration>(const Duration(hours: 999), (best, current) {
+      return current < best ? current : best;
+    });
+
+    Constant.prompt = Constant.generatePromptPairMemory(
+      _averageScore,
+      _averageResponseTime,
+      _accuracy,
+      _userPercentile,
+      _totalErrors,
+      totalUserScore,
+      maxConsecutivePairs,
+      bestTime.inSeconds,
+      results.length,
+      dataSetName,
+      dataSetUrl,
+    );
+
+    final String response = await SecuenceOfNumberAI.rewriteText(Constant.prompt);
+
+    setState(() {
+      analysisResult = response;
+    });
+  } catch (e) {
+    setState(() {
+      analysisResult = "Error al procesar el análisis. Inténtalo de nuevo más tarde.";
+    });
+  } finally {
+    setState(() {
+      isLoadingAnalysis = false;
+    });
+  }
+}
+
 }
