@@ -593,7 +593,226 @@ class _CardPairsResultsState extends State<CardPairsResults> {
   }
 
   Widget _buildResultsTable() {
-    // Aquí se mostrarán los resultados detallados
-    return const Text("Tabla de resultados aquí");
+    final List<Map<String, dynamic>> allResults = [];
+
+    for (var result in results.reversed) {
+      for (int i = 0; i < result.rawData.length; i++) {
+        final raw = result.rawData[i];
+
+        if (raw["trial_type"] != "PAIR") continue;
+
+        final score = (i < result.scores.length) ? result.scores[i] : 0.0;
+        final duration = (i < result.durations.length)
+            ? result.durations[i]
+            : const Duration(seconds: 0);
+        final difficulty = raw["difficulty"] ?? 1;
+        final errors = raw["errors"] ?? 0;
+        final answer = raw["answer"] ?? 0;
+
+        allResults.add({
+          "Fecha": result.date,
+          "Dificultad": difficulty,
+          "Puntuación": score,
+          "Tiempo": duration.inSeconds,
+          "Errores": errors,
+          "Correcto": answer == 1,
+        });
+
+        if (allResults.length >= 10) break;
+      }
+      if (allResults.length >= 10) break;
+    }
+
+    if (allResults.isEmpty) {
+      return Neumorphic(
+        style: NeumorphicStyle(
+          depth: 6,
+          boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+          color: NeumorphicTheme.baseColor(context),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: const Text(
+          "📋 No hay resultados recientes tipo 'PAIR'.",
+          style: TextStyle(
+            fontSize: 18,
+            color: Color.fromARGB(255, 80, 80, 80),
+          ),
+        ),
+      );
+    }
+
+    return Neumorphic(
+      style: NeumorphicStyle(
+        depth: 6,
+        boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+        color: NeumorphicTheme.baseColor(context),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            "📋 Últimos 10 intentos tipo 'PAIR'",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 47, 47, 47),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Table(
+            border: const TableBorder.symmetric(
+              outside: BorderSide(
+                color: Color.fromARGB(255, 80, 80, 80),
+                width: 1,
+              ),
+            ),
+            columnWidths: const {
+              0: FlexColumnWidth(2),
+              1: FlexColumnWidth(1),
+              2: FlexColumnWidth(1),
+              3: FlexColumnWidth(1),
+              4: FlexColumnWidth(1),
+              5: FlexColumnWidth(1),
+            },
+            children: [
+              const TableRow(
+                decoration:
+                    BoxDecoration(color: Color.fromARGB(255, 200, 200, 200)),
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(6.0),
+                    child: Text("Fecha",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(6.0),
+                    child: Text("Dificultad",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(6.0),
+                    child: Text("Puntuación",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(6.0),
+                    child: Text("Tiempo",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(6.0),
+                    child: Text("Errores",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(6.0),
+                    child: Text("✓",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              ...allResults.map((result) {
+                final isCorrect = result["Correcto"];
+                final rowColor = isCorrect
+                    ? const Color.fromARGB(255, 0, 150, 0)
+                    : const Color.fromARGB(255, 200, 0, 0);
+
+                return TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Text(
+                        result["Fecha"].toString().split(" ").first,
+                        style: TextStyle(color: rowColor),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Text(
+                        result["Dificultad"].toString(),
+                        style: TextStyle(color: rowColor),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Text(
+                        result["Puntuación"].toStringAsFixed(2),
+                        style: TextStyle(color: rowColor),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Text(
+                        "${result["Tiempo"]}s",
+                        style: TextStyle(color: rowColor),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Text(
+                        result["Errores"].toString(),
+                        style: TextStyle(color: rowColor),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Icon(
+                        isCorrect ? Icons.check : Icons.close,
+                        color: rowColor,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ],
+          ),
+          const SizedBox(height: 10),
+          IconButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text("📊 Información del Gráfico"),
+                    content: const Text("""
+Esta tabla muestra un resumen detallado de tus **últimos 10 intentos exitosos** en el juego *'Parejas de Cartas'*.
+
+📅 **Fecha:** Día en que se registró el intento.
+
+⚙️ **Dificultad:** Nivel del juego en ese intento.
+
+🏆 **Puntuación:** Resultado obtenido en ese intento (escala hasta 500 puntos).
+
+⏱️ **Tiempo:** Tiempo total que tardaste en completar la partida, en segundos.
+
+❌ **Errores:** Número de intentos fallidos durante ese intento.
+
+✅ **✓ (Correcto):** Si el intento fue registrado como exitoso (`answer == 1`).
+
+Esta tabla te permite seguir la evolución de tu rendimiento y detectar posibles patrones: mejora, estancamiento o retroceso.
+"""),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text("Cerrar"),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            icon: const Icon(
+              Icons.info_outline_rounded,
+              color: Color.fromARGB(255, 80, 39, 176),
+              size: 30,
+            ),
+          )
+        ],
+      ),
+    );
   }
 }
