@@ -5,6 +5,7 @@ import 'package:cognitify/screens/home/result/memory/games/widget/neumorphic_ana
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:hive/hive.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_radar_chart/flutter_radar_chart.dart' as radar;
 import 'dart:math';
 
 class CardPairsResults extends StatefulWidget {
@@ -27,7 +28,7 @@ class _CardPairsResultsState extends State<CardPairsResults> {
   String analysisResult = "";
   String dataSetName = "";
   String dataSetUrl = "";
-   DatasetInfo? dataset; 
+  DatasetInfo? dataset;
 
   @override
   void initState() {
@@ -51,9 +52,8 @@ class _CardPairsResultsState extends State<CardPairsResults> {
     String userId = userProfile?.name ?? "R1001P";
 
     // Cargar datos del dataset por tipo (Memoria - Parejas de Cartas)
-     dataset = datasetBox.values.firstWhere(
-      (d) =>
-          d.subtype == "Parejas de Cartas" ,
+    dataset = datasetBox.values.firstWhere(
+      (d) => d.subtype == "Parejas de Cartas",
       orElse: () => DatasetInfo(
         name: "Sin datos",
         url: "",
@@ -160,6 +160,8 @@ class _CardPairsResultsState extends State<CardPairsResults> {
               const SizedBox(height: 20),
               _buildBarChart(),
               const SizedBox(height: 20),
+              _buildRadarChart(),
+              const SizedBox(height: 20),
               _buildResultsTable(),
               const SizedBox(height: 20),
               NeumorphicAnalysisTile(
@@ -196,21 +198,20 @@ class _CardPairsResultsState extends State<CardPairsResults> {
   }
 
   Widget _buildSummaryCard() {
-   // Filtra solo los valores que son respuestas válidas
-final datasetAnswers = dataset!.jsonData!
-    .map((entry) => int.tryParse(entry["answer"].toString()) ?? -999)
-    .where((answer) => answer != -999)
-    .toList();
+    // Filtra solo los valores que son respuestas válidas
+    final datasetAnswers = dataset!.jsonData!
+        .map((entry) => int.tryParse(entry["answer"].toString()) ?? -999)
+        .where((answer) => answer != -999)
+        .toList();
 
-print("📊 Respuestas del Dataset (filtradas): $datasetAnswers");
+    print("📊 Respuestas del Dataset (filtradas): $datasetAnswers");
 
 // Calcula el promedio si hay datos válidos
-final datasetAverage = datasetAnswers.isNotEmpty
-    ? datasetAnswers.reduce((a, b) => a + b) / datasetAnswers.length
-    : 0.0;
+    final datasetAverage = datasetAnswers.isNotEmpty
+        ? datasetAnswers.reduce((a, b) => a + b) / datasetAnswers.length
+        : 0.0;
 
-print("📊 Promedio del Dataset (filtrado): $datasetAverage");
-
+    print("📊 Promedio del Dataset (filtrado): $datasetAverage");
 
     // Calcula la puntuación total del usuario
     final totalUserScore =
@@ -345,9 +346,256 @@ print("📊 Promedio del Dataset (filtrado): $datasetAverage");
     );
   }
 
+  Widget _buildRadarChart() {
+    final ticks = [20, 40, 60, 80, 100]; // Enteros en porcentaje
+
+    const features = ["Score", "Precision", "Errors", "Time", "Percentile"];
+
+    final userData = [
+      (_averageScore / 500).clamp(0.0, 1.0),
+      (_accuracy / 100).clamp(0.0, 1.0),
+      (1 -
+              (_totalErrors /
+                  (results
+                      .expand((r) => r.rawData)
+                      .length))) // menos errores mejor
+          .clamp(0.0, 1.0),
+      (1 - (_averageResponseTime / 60)).clamp(0.0, 1.0), // 60s como peor caso
+      (_userPercentile / 100).clamp(0.0, 1.0),
+    ];
+
+    final datasetEntries = dataset!.jsonData!
+        .where((e) => e["trial_type"] == "PROB" && e["answer"] != null)
+        .toList();
+
+    final datasetCorrect = datasetEntries.where((e) => e["answer"] == 1).length;
+    final datasetTotal = datasetEntries.length;
+
+    final datasetPrecision =
+        datasetTotal > 0 ? (datasetCorrect / datasetTotal) * 100 : 0.0;
+    final datasetErrors = datasetTotal - datasetCorrect;
+
+    final datasetDurations = datasetEntries
+        .map((e) => double.tryParse(e["duration"].toString()) ?? 0.0)
+        .where((d) => d > 0)
+        .toList();
+
+    final datasetAvgDuration = datasetDurations.isNotEmpty
+        ? datasetDurations.reduce((a, b) => a + b) / datasetDurations.length
+        : 0.0;
+
+    final datasetScore = datasetScores.isNotEmpty
+        ? datasetScores.reduce((a, b) => a + b) / datasetScores.length
+        : 0.0;
+
+    final datasetData = [
+      (datasetScore / 500).clamp(0.0, 1.0),
+      (datasetPrecision / 100).clamp(0.0, 1.0),
+      (1 - (datasetErrors / datasetTotal)).clamp(0.0, 1.0),
+      (1 - (datasetAvgDuration / 60)).clamp(0.0, 1.0),
+      0.75, // fijo o calculable si tienes percentil dataset
+    ];
+
+    return Neumorphic(
+      style: NeumorphicStyle(
+        depth: 6,
+        boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+        color: NeumorphicTheme.baseColor(context),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          const Text(
+            "📊 Comparación Radar",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 47, 47, 47),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 300,
+            child: radar.RadarChart.light(
+              ticks: ticks,
+              features: features,
+              data: [
+                userData.map((e) => (e * 100).round()).toList(),
+                datasetData.map((e) => (e * 100).round()).toList(),
+              ],
+              reverseAxis: false,
+              useSides: true,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text("🔵 Tú vs 🟢 Dataset"),
+          const SizedBox(height: 10),
+          IconButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text("📊 Información del Gráfico"),
+                    content: const Text(
+                        "Este gráfico muestra una comparación entre tu rendimiento y el promedio del dataset en cinco aspectos clave:\n\n"
+                        "🔹 *Score:* Tu puntuación promedio en los tests.\n"
+                        "🔹 *Precisión:* Porcentaje de aciertos respecto al total de intentos.\n"
+                        "🔹 *Errores:* Cuantos más errores, más pequeño será el área.\n"
+                        "🔹 *Tiempo:* Tiempo medio que tardas en resolver los pares (menos es mejor).\n"
+                        "🔹 *Percentil:* Qué tan por encima estás respecto al resto de personas del dataset.\n\n"
+                        "🟦 Área Azul: Tus resultados\n"
+                        "🟩 Área Verde: Promedio del dataset\n\n"
+                        "👉 Cuanto más cerca del borde está un valor, mejor es el rendimiento en ese aspecto.\n"
+                        "Esta visualización te permite detectar tus fortalezas y áreas donde puedes mejorar."),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text("Cerrar"),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            icon: const Icon(
+              Icons.info_outline_rounded,
+              color: Color.fromARGB(255, 80, 39, 176),
+              size: 30,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   Widget _buildBarChart() {
-    // Aquí podemos ajustar los gráficos para representar pares correctamente
-    return const Text("Gráfico aquí");
+    final userScores = results.expand((r) => r.scores).toList();
+    final attempts = results.expand((r) => r.rawData).length;
+    final errors = _totalErrors;
+
+    return Neumorphic(
+      style: NeumorphicStyle(
+        depth: 6,
+        boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(16)),
+        color: NeumorphicTheme.baseColor(context),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          const Text(
+            "📊 Rendimiento",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color.fromARGB(255, 47, 47, 47),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 300,
+            child: BarChart(
+              BarChartData(
+                barGroups: [
+                  BarChartGroupData(
+                    x: 0,
+                    barRods: [
+                      BarChartRodData(
+                        toY: userScores.isNotEmpty
+                            ? userScores.reduce((a, b) => a + b) /
+                                userScores.length
+                            : 0,
+                        width: 20,
+                        color: const Color.fromARGB(255, 80, 39, 176),
+                      ),
+                    ],
+                    showingTooltipIndicators: [0],
+                  ),
+                  BarChartGroupData(
+                    x: 1,
+                    barRods: [
+                      BarChartRodData(
+                        toY: attempts.toDouble(),
+                        width: 20,
+                        color: const Color.fromARGB(255, 150, 150, 150),
+                      ),
+                    ],
+                    showingTooltipIndicators: [0],
+                  ),
+                  BarChartGroupData(
+                    x: 2,
+                    barRods: [
+                      BarChartRodData(
+                        toY: errors.toDouble(),
+                        width: 20,
+                        color: const Color.fromARGB(255, 255, 100, 100),
+                      ),
+                    ],
+                    showingTooltipIndicators: [0],
+                  ),
+                ],
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, _) {
+                        switch (value.toInt()) {
+                          case 0:
+                            return const Text("Promedio");
+                          case 1:
+                            return const Text(" intentos");
+                          case 2:
+                            return const Text("Errores");
+                          default:
+                            return const Text("");
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                gridData: FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          IconButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text("📊 Información del Gráfico"),
+                    content: const Text(
+                      "Este gráfico muestra un resumen de tu rendimiento en el juego 'Parejas de Cartas':\n\n"
+                      "🟣 *Puntuación Promedio:* Muestra la media de tus puntuaciones en todas las partidas jugadas.\n"
+                      "⚪ *Intentos Totales:* Representa el número total de parejas que intentaste resolver (aciertos e intentos fallidos).\n"
+                      "🔴 *Total de Errores:* Indica cuántos intentos resultaron incorrectos.\n\n"
+                      "Este gráfico te permite visualizar rápidamente tu desempeño general y detectar áreas de mejora.",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text("Cerrar"),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            icon: const Icon(
+              Icons.info_outline_rounded,
+              color: Color.fromARGB(255, 80, 39, 176),
+              size: 30,
+            ),
+          )
+        ],
+      ),
+    );
   }
 
   Widget _buildResultsTable() {
