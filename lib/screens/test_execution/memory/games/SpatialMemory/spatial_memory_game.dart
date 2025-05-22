@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cognitify/models/test_result.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/difficulty_slider.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/neumorphic_app_bar.dart';
+import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/start_button.dart';
 import 'package:cognitify/utils/test_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
@@ -26,13 +27,12 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
   DateTime? startTime;
   int sessionNumber = 1;
   String userId = "R1003P";
-  bool? showSpaces;
+  bool showInfo = false;
 
   @override
   void initState() {
     super.initState();
     loadDifficulty();
-    showSpaces=false;
   }
 
   Future<void> saveDifficulty(int size) async {
@@ -48,6 +48,7 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
   }
 
   void startGame() {
+    showInfo = false;
     final int totalTiles = gridSize * gridSize;
     final random = Random();
     final available = List.generate(totalTiles, (index) => index);
@@ -77,7 +78,6 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
   }
 
   Future<void> showSequence() async {
-    showSpaces=true;
     for (int i = 0; i < targetSequence.length; i++) {
       int index = targetSequence[i];
 
@@ -172,52 +172,84 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
       appBar: const CustomNeumorphicAppBar(),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
+        child: Stack(
           children: [
-            if (!gameStarted)
-              Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: startGame,
-                    child: const Text("Comenzar"),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (!gameStarted && !showInfo)
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      StartButton(onStart: startGame),
+                      DifficultySlider(
+                        sequenceLength: gridSize,
+                        onDifficultyChanged: (val) {
+                          setState(() {
+                            gridSize = val;
+                            saveDifficulty(val);
+                          });
+                        },
+                      )
+                    ],
                   ),
-                  DifficultySlider(
-                    sequenceLength: gridSize,
-                    onDifficultyChanged: (val) {
-                      setState(() {
-                        gridSize = val;
-                        saveDifficulty(val);
-                      });
-                    },
-                  )
-                ],
-              ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: gridSize,
-                children: List.generate(tiles.length, (index) {
-                  final tile = tiles[index];
-                  final isShown = tile["isShown"] == true;
+                const SizedBox(height: 20),
+                if (gameStarted && !showInfo)
+                  Expanded(
+                    child: Center(
+                      child: GridView.count(
+                        crossAxisCount: gridSize,
+                        children: List.generate(tiles.length, (index) {
+                          final tile = tiles[index];
+                          final isShown = tile["isShown"] == true;
 
-                  return Padding(
-                    padding: const EdgeInsets.all(6.0),
-                    child: NeumorphicButton(
-                      onPressed: () => handleTileTap(index),
-                      style: NeumorphicStyle(
-                        depth: isShown ? -6 : 6,
-                        disableDepth: isDisplayingSequence ? false : true,
-                        intensity: 0.8,
-                        boxShape: NeumorphicBoxShape.roundRect(
-                            BorderRadius.circular(12)),
-                        color: isShown ? Colors.blue : null,
+                          return Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: NeumorphicButton(
+                              onPressed: () => handleTileTap(index),
+                              style: NeumorphicStyle(
+                                depth: isShown ? -6 : 6,
+                                disableDepth:
+                                    isDisplayingSequence ? false : true,
+                                intensity: 0.8,
+                                boxShape: NeumorphicBoxShape.roundRect(
+                                    BorderRadius.circular(12)),
+                                color: isShown
+                                    ? const Color.fromARGB(255, 80, 39, 176)
+                                    : null,
+                              ),
+                              child: const SizedBox.expand(),
+                            ),
+                          );
+                        }),
                       ),
-                      child: const SizedBox.expand(),
                     ),
-                  );
-                }),
+                  ),
+              ],
+            ),
+            if (!gameStarted)
+              Positioned(
+                bottom: 20,
+                right: 20,
+                child: NeumorphicButton(
+                  onPressed: () {
+                    setState(() {
+                      showInfo = !showInfo;
+                    });
+                  },
+                  style: const NeumorphicStyle(
+                    shape: NeumorphicShape.flat,
+                    boxShape: NeumorphicBoxShape.circle(),
+                    depth: 6,
+                  ),
+                  child: Icon(
+                    showInfo ? Icons.close : Icons.info_outline,
+                    size: 24,
+                    color: const Color.fromARGB(255, 80, 39, 176),
+                  ),
+                ),
               ),
-            )
           ],
         ),
       ),
