@@ -26,11 +26,13 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
   DateTime? startTime;
   int sessionNumber = 1;
   String userId = "R1003P";
+  bool? showSpaces;
 
   @override
   void initState() {
     super.initState();
     loadDifficulty();
+    showSpaces=false;
   }
 
   Future<void> saveDifficulty(int size) async {
@@ -50,11 +52,13 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
     final random = Random();
     final available = List.generate(totalTiles, (index) => index);
 
-    tiles = List.generate(totalTiles, (i) => {
-          "index": i,
-          "isShown": false,
-          "color": Colors.grey,
-        });
+    tiles = List.generate(
+        totalTiles,
+        (i) => {
+              "index": i,
+              "isShown": false,
+              "color": Colors.grey,
+            });
 
     targetSequence = [];
     for (int i = 0; i < gridSize; i++) {
@@ -73,6 +77,7 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
   }
 
   Future<void> showSequence() async {
+    showSpaces=true;
     for (int i = 0; i < targetSequence.length; i++) {
       int index = targetSequence[i];
 
@@ -82,9 +87,11 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
 
       await Future.delayed(const Duration(milliseconds: 600));
 
-      setState(() {
-        tiles[index]["isShown"] = false;
-      });
+      if (mounted) {
+        setState(() {
+          tiles[index]["isShown"] = false;
+        });
+      }
 
       await Future.delayed(const Duration(milliseconds: 200));
     }
@@ -138,7 +145,8 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
       "answer": errors == 0 ? 1 : -1,
     };
 
-    Constant.saveTestResult("Memoria Espacial", score, duration, rawData, gridSize);
+    Constant.saveTestResult(
+        "Memoria Espacial", score, duration, rawData, gridSize);
     TestResult.saveGlobalStats(score, gridSize, errors, duration);
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -190,20 +198,26 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
                 crossAxisCount: gridSize,
                 children: List.generate(tiles.length, (index) {
                   final tile = tiles[index];
-                  return GestureDetector(
-                    onTap: () => handleTileTap(index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: tile["isShown"] ? Colors.blue : Colors.grey[300],
-                        borderRadius: BorderRadius.circular(12),
+                  final isShown = tile["isShown"] == true;
+
+                  return Padding(
+                    padding: const EdgeInsets.all(6.0),
+                    child: NeumorphicButton(
+                      onPressed: () => handleTileTap(index),
+                      style: NeumorphicStyle(
+                        depth: isShown ? -6 : 6,
+                        disableDepth: isDisplayingSequence ? false : true,
+                        intensity: 0.8,
+                        boxShape: NeumorphicBoxShape.roundRect(
+                            BorderRadius.circular(12)),
+                        color: isShown ? Colors.blue : null,
                       ),
+                      child: const SizedBox.expand(),
                     ),
                   );
                 }),
               ),
-            ),
+            )
           ],
         ),
       ),
