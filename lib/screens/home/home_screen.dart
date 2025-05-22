@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.black,
           ),
           textStyle: NeumorphicTextStyle(
-            fontSize: 28,
+            fontSize: MediaQuery.of(context).size.height * 0.035,
             fontWeight: FontWeight.bold,
           ),
         ),

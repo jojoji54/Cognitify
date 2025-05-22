@@ -8,6 +8,7 @@ class CognitifyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const NeumorphicApp(
       title: 'Cognitify',
+      
       themeMode: ThemeMode.light,
       theme: NeumorphicThemeData(
         baseColor: Color(0xFFE0E0E0),

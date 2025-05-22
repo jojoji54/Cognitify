@@ -1,4 +1,5 @@
 import 'package:cognitify/screens/dataset_selection_screen.dart';
+import 'package:cognitify/screens/test_execution/memory/games/SpatialMemory/spatial_memory_game.dart';
 import 'package:cognitify/screens/test_execution/memory/games/cards/card_pairs_game.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/secuence_of_numbers.dart';
 import 'package:cognitify/services/preferences_service.dart';
@@ -23,11 +24,17 @@ class _MemoryTestTypeSelectionState extends State<MemoryTestTypeSelection> {
       BuildContext context, String testName, Widget testWidget) async {
     HapticFeedback.lightImpact();
     final hasDataset = await PreferencesService.isDatasetSelected(testName);
-    Navigator.push(
+    /*  Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) =>
             hasDataset ? testWidget : DatasetSelectionScreen(gameName: selectedTest!),
+      ),
+    ); */
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => testWidget,
       ),
     );
   }
@@ -136,7 +143,7 @@ class _MemoryTestTypeSelectionState extends State<MemoryTestTypeSelection> {
                     ? const SequenceOfNumbers()
                     : title == "Parejas de Cartas"
                         ? const CardPairsGame()
-                        : const CardPairsGame(),
+                        : const SpatialMemoryGame(),
               ),
               style: NeumorphicStyle(
                 shape: NeumorphicShape.flat,
@@ -205,7 +212,7 @@ class _MemoryTestTypeSelectionState extends State<MemoryTestTypeSelection> {
               "Memoria Espacial",
               FontAwesomeIcons.mapLocationDot,
               "Memoria Espacial",
-              const CardPairsGame(), // Ajusta esto cuando tengas el widget correcto
+              const SpatialMemoryGame(), // Ajusta esto cuando tengas el widget correcto
             ),
             const SizedBox(height: 30),
             if (selectedTest != null) ...[
