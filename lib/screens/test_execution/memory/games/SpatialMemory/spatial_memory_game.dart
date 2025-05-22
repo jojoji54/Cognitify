@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:cognitify/models/test_result.dart';
+import 'package:cognitify/screens/test_execution/memory/games/cards/widget/card_info_card.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/difficulty_slider.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/neumorphic_app_bar.dart';
 import 'package:cognitify/screens/test_execution/memory/games/secuenceOfNumbers/widgets/start_button.dart';
@@ -225,6 +226,12 @@ class _SpatialMemoryGameState extends State<SpatialMemoryGame> {
                         }),
                       ),
                     ),
+                  ),
+                if (showInfo)
+                  const CardInfoCard(
+                    title: "Cómo Jugar",
+                    content:
+                        "Observa la secuencia de bloques resaltados y memoriza su orden.\n\nDespués, repítela tocando los bloques en el mismo orden. A mayor dificultad, más bloques deberás recordar.\n\nGanas más puntos si lo haces rápido y sin errores.",
                   ),
               ],
             ),
